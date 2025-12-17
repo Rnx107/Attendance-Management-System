@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'Pages/courselist.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+import 'pages/login.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(const MyApp());  
 }
 
 class MyApp extends StatelessWidget {
@@ -12,18 +16,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.blue,
-          title: Text("Hello"),
-          leading: Builder(
-            builder: (context) => IconButton(
-              onPressed: () {},
-              icon: Icon(Icons.menu),
-            ),
-          ),
-        ),
+      title: 'Attendance Management System',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
+      home: const LoginPage(),
     );
   }
 }
+
