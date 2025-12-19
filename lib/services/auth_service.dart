@@ -270,7 +270,7 @@ class AuthService {
           await http.post(
             Uri.parse(ApiConfig.firebaseLogout),
             headers: ApiConfig.getAuthHeaders(sessionToken),
-          ).timeout(const Duration(seconds: 5));
+          ).timeout(ApiConfig.connectTimeout);
         } catch (e) {
           // Ignore backend errors during logout
         }

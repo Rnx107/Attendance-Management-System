@@ -14,7 +14,7 @@ from .firebase_config import verify_firebase_token
 from .models import User
 from .serializers import UserSerializer
 import jwt
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from django.conf import settings
 import logging
 
@@ -35,14 +35,14 @@ def generate_session_token(user: User) -> dict:
             - user: Serialized user data
     """
     # Token expires in 1 hour
-    expiration = datetime.utcnow() + timedelta(hours=1)
+    expiration = datetime.now(timezone.utc) + timedelta(hours=1)
     
     payload = {
         'user_id': str(user.id),
         'email': user.email,
         'role': user.role,
         'exp': expiration,
-        'iat': datetime.utcnow(),
+        'iat': datetime.now(timezone.utc),
     }
     
     token = jwt.encode(payload, settings.SECRET_KEY, algorithm='HS256')

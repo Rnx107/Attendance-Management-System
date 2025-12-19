@@ -148,7 +148,7 @@ class _HomePageState extends State<HomePage> {
                               radius: 50,
                               backgroundColor: Colors.blue.shade100,
                               child: Text(
-                                authProvider.userFirstname?.isNotEmpty == true
+                                (authProvider.userFirstname?.isNotEmpty ?? false)
                                     ? authProvider.userFirstname![0].toUpperCase()
                                     : 'U',
                                 style: TextStyle(

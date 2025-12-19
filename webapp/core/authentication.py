@@ -105,7 +105,7 @@ class FirebaseAuthentication(authentication.BaseAuthentication):
             # Create a new user
             # Parse the name into first and last name
             name_parts = name.split(' ', 1) if name else ['', '']
-            firstname = name_parts[0] if len(name_parts) > 0 else email.split('@')[0]
+            firstname = name_parts[0] if name_parts[0] else email.split('@')[0]
             lastname = name_parts[1] if len(name_parts) > 1 else ''
             
             # Default role for new users is 'student'

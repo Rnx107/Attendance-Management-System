@@ -41,8 +41,12 @@ def initialize_firebase():
             _firebase_app = firebase_admin.initialize_app(cred)
             logger.info("Firebase Admin SDK initialized successfully")
         else:
-            # For development/testing, use default credentials or skip initialization
-            logger.warning("Firebase credentials not found. Using default initialization.")
+            # In production, credentials are required
+            if config('DEBUG', default=True, cast=bool) is False:
+                raise ValueError("Firebase credentials are required in production. Set FIREBASE_CREDENTIALS_PATH.")
+            
+            # For development/testing only, use default credentials
+            logger.warning("Firebase credentials not found. Using default initialization (development only).")
             _firebase_app = firebase_admin.initialize_app()
     except Exception as e:
         logger.error(f"Failed to initialize Firebase Admin SDK: {e}")
