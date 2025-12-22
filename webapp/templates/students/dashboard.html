@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Students Dashboard{% endblock %}
+{% block content %}
+  <h1>Students Dashboard</h1>
+  <p>Welcome, {{ user.get_full_name|default:user.username }}.</p>
+  <!-- Add student-specific widgets here -->
+{% endblock %}

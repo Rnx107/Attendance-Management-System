@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block title %}Teachers Dashboard{% endblock %}
+{% block content %}
+  <h1>Teachers Dashboard</h1>
+  <p>Welcome, {{ user.get_full_name|default:user.username }}.</p>
+  <!-- Add teacher-specific widgets here -->
+{% endblock %}

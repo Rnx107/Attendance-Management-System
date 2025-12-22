@@ -40,6 +40,14 @@ INSTALLED_APPS = [
     'core',
     'rest_framework',
     'corsheaders',
+    'accounts',
+    'students', 
+    'teachers',
+    'courses',
+    'attendance',
+    'dashboard',
+    'reports',
+    'notifications',
 ]
 
 MIDDLEWARE = [
@@ -66,7 +74,7 @@ ROOT_URLCONF = 'webapp.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
