@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
-void main(){
-  runApp(const LoginPage());
-}
+import 'package:provider/provider.dart';
+import '../providers/auth_provider.dart';
+import 'homepage.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,53 +11,30 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isLoading = false;
-  String? _errorMessage;
-
-  Future<void> _signInWithGoogle() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
+  @override
+  void initState() {
+    super.initState();
+    // Check authentication status on page load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      if (authProvider.isAuthenticated) {
+        _navigateToHome();
+      }
     });
+  }
 
-    try {
-      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      final UserCredential userCredential =
-          await _auth.signInWithProvider(googleProvider);
+  void _navigateToHome() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const HomePage()),
+    );
+  }
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Welcome ${userCredential.user?.displayName ?? 'User'}!'),
-          ),
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorMessage = e.message ?? 'Authentication failed';
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorMessage!)),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred';
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('An unexpected error occurred')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+  Future<void> _handleSignIn(BuildContext context) async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final success = await authProvider.signInWithGoogle();
+    
+    if (success && mounted) {
+      _navigateToHome();
     }
   }
 
@@ -80,79 +55,131 @@ class _LoginPageState extends State<LoginPage> {
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Attendance System',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+            child: Consumer<AuthProvider>(
+              builder: (context, authProvider, child) {
+                // Auto-navigate to home if authenticated
+                if (authProvider.isAuthenticated) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _navigateToHome();
+                  });
+                }
+                
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // App Icon/Logo
+                    Container(
+                      width: 120,
+                      height: 120,
+                      decoration: BoxDecoration(
                         color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Track your attendance easily',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white70,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 60),
-                if (_errorMessage != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red.shade700),
-                    ),
-                  ),
-                if (_errorMessage != null) const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _signInWithGoogle,
-                  icon: _isLoading
-                      ? SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.blue.shade600,
-                            ),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                        )
-                      : const Icon(Icons.login),
-                  label: Text(
-                    _isLoading ? 'Signing in...' : 'Continue with Google',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.grey.shade800,
-                    elevation: 4,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  'Sign in with your Google account to get started',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
+                        ],
                       ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+                      child: Icon(
+                        Icons.school,
+                        size: 60,
+                        color: Colors.blue.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Attendance System',
+                      style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Track your attendance easily',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: Colors.white70,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 60),
+                    
+                    // Error message
+                    if (authProvider.errorMessage != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 24),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.red.shade100,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red.shade700),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                authProvider.errorMessage!,
+                                style: TextStyle(color: Colors.red.shade700),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    
+                    // Sign-in button
+                    ElevatedButton.icon(
+                      onPressed: authProvider.isLoading
+                          ? null
+                          : () => _handleSignIn(context),
+                      icon: authProvider.isLoading
+                          ? SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.blue.shade600,
+                                ),
+                              ),
+                            )
+                          : const Icon(Icons.login),
+                      label: Text(
+                        authProvider.isLoading
+                            ? 'Signing in...'
+                            : 'Continue with Google',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 32,
+                          vertical: 16,
+                        ),
+                        backgroundColor: Colors.white,
+                        foregroundColor: Colors.grey.shade800,
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Sign in with your Google account to get started',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.white70,
+                          ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                );
+              },
             ),
           ),
         ),

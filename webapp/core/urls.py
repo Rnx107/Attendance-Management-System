@@ -5,6 +5,7 @@ from .views import (
     UserViewSet, CourseViewSet, SemesterViewSet, SubjectViewSet,
     StudentViewSet, TeacherSubjectViewSet, ClassScheduleViewSet, AttendanceViewSet
 )
+from .auth_views import firebase_login, firebase_logout, verify_session, refresh_token
 
 # Create router and register viewsets
 router = DefaultRouter()
@@ -18,7 +19,13 @@ router.register(r'schedules', ClassScheduleViewSet, basename='schedule')
 router.register(r'attendance', AttendanceViewSet, basename='attendance')
 
 urlpatterns = [
-    # JWT Authentication endpoints
+    # Firebase Authentication endpoints
+    path('auth/firebase-login/', firebase_login, name='firebase_login'),
+    path('auth/firebase-logout/', firebase_logout, name='firebase_logout'),
+    path('auth/verify-session/', verify_session, name='verify_session'),
+    path('auth/refresh-token/', refresh_token, name='refresh_token'),
+    
+    # JWT Authentication endpoints (for backward compatibility)
     path('auth/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     

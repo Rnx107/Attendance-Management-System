@@ -39,6 +39,14 @@ dependencies:
   cloud_firestore: ^5.5.1
   firebase_ui_auth: ^2.0.0
   google_sign_in: ^7.2.0
+  
+  # HTTP client and storage
+  http: ^1.2.0
+  flutter_secure_storage: ^9.2.2
+  shared_preferences: ^2.2.2
+  
+  # State management
+  provider: ^6.1.2
 
 dev_dependencies:
   flutter_test:
