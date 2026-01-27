@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import User, Student, Course, Semester, Subject, TeacherSubject, ClassSchedule, Attendance
+import secrets
+from .models import User, Student, Course, Semester, Subject, TeacherSubject, ClassSchedule, Attendance, ApiKey
 
 
 @admin.register(User)
@@ -66,3 +67,25 @@ class AttendanceAdmin(admin.ModelAdmin):
     search_fields = ['student__user__firstname', 'student__user__lastname']
     readonly_fields = ['id', 'marked_at', 'updated_at']
     date_hierarchy = 'session__session_date'
+
+
+@admin.register(ApiKey)
+class ApiKeyAdmin(admin.ModelAdmin):
+    list_display = ['short_key', 'created_at', 'updated_at']
+    readonly_fields = ['created_at', 'updated_at']
+    actions = ['generate_key']
+
+    def short_key(self, obj):
+        if not obj.key:
+            return '(empty)'
+        return obj.key[:8] + '...' + obj.key[-8:]
+
+    short_key.short_description = 'API Key (partial)'
+
+    def generate_key(self, request, queryset):
+        for obj in queryset:
+            obj.key = secrets.token_urlsafe(32)
+            obj.save()
+        self.message_user(request, "Generated new API key for selected entries.")
+
+    generate_key.short_description = 'Generate new API key for selected'

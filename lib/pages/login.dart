@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:attendance_management_system/core/constants.dart';
+import 'package:attendance_management_system/core/utils.dart';
+import 'package:attendance_management_system/pages/signup.dart';
+import 'package:attendance_management_system/services/api_services.dart';
+// import 'package:attendance_management_system/pages/home.dart';
 
-void main(){
-  runApp(const LoginPage());
-}
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -13,147 +14,154 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  bool _isLoading = false;
-  String? _errorMessage;
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool isLoading = false;
 
-  Future<void> _signInWithGoogle() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  void _login() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      showSnackBar(
+        context,
+        'Please enter email and password',
+        AppColors.errorRed,
+      );
+      return;
+    }
+
+    setState(() => isLoading = true);
 
     try {
-      final GoogleAuthProvider googleProvider = GoogleAuthProvider();
-      final UserCredential userCredential =
-          await _auth.signInWithProvider(googleProvider);
+      final response = await ApiService.login(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-                'Welcome ${userCredential.user?.displayName ?? 'User'}!'),
-          ),
+      if (response['success']) {
+        showSnackBar(
+          context,
+          'Login successful!',
+          AppColors.successGreen,
         );
-      }
-    } on FirebaseAuthException catch (e) {
-      setState(() {
-        _errorMessage = e.message ?? 'Authentication failed';
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(_errorMessage!)),
+        // TODO: Navigate to appropriate dashboard based on user role
+        // if (response['role'] == 'student') {
+        //   Navigator.pushReplacementNamed(context, '/student_dashboard');
+        // } else if (response['role'] == 'teacher') {
+        //   Navigator.pushReplacementNamed(context, '/teacher_dashboard');
+        // }
+      } else {
+        showSnackBar(
+          context,
+          response['error'] ?? 'Login failed',
+          AppColors.errorRed,
         );
       }
     } catch (e) {
-      setState(() {
-        _errorMessage = 'An unexpected error occurred';
-      });
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('An unexpected error occurred')),
-        );
-      }
+      showSnackBar(
+        context,
+        'Error: $e',
+        AppColors.errorRed,
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() => isLoading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.blue.shade400,
-              Colors.blue.shade600,
-            ],
-          ),
-        ),
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  'Attendance System',
-                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                  textAlign: TextAlign.center,
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min, // make sure the div is centered
+            children: [
+              // Logo Image
+              Image.asset('assets/images/logo.png', height: 120),
+
+              const SizedBox(height: 20), //space between
+
+              const Text(
+                'KUSOED Login',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.primaryBlue,
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Track your attendance easily',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Colors.white70,
-                      ),
-                  textAlign: TextAlign.center,
+              ),
+
+              const SizedBox(height: 30),
+
+              // Email Field
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
                 ),
-                const SizedBox(height: 60),
-                if (_errorMessage != null)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade100,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      _errorMessage!,
-                      style: TextStyle(color: Colors.red.shade700),
-                    ),
+              ),
+
+              const SizedBox(height: 15),
+
+              // Password Field
+              TextField(
+                controller: passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+
+              const SizedBox(height: 25),
+
+              // Login Button
+              SizedBox(
+                width: double.infinity,
+                height: 45,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryBlue,
+                    foregroundColor: Colors.white,
                   ),
-                if (_errorMessage != null) const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _signInWithGoogle,
-                  icon: _isLoading
-                      ? SizedBox(
+                  onPressed: isLoading ? null : _login,
+                  child: isLoading
+                      ? const SizedBox(
                           height: 20,
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.blue.shade600,
-                            ),
+                            valueColor:
+                                AlwaysStoppedAnimation<Color>(Colors.white),
                           ),
                         )
-                      : const Icon(Icons.login),
-                  label: Text(
-                    _isLoading ? 'Signing in...' : 'Continue with Google',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
-                    ),
-                    backgroundColor: Colors.white,
-                    foregroundColor: Colors.grey.shade800,
-                    elevation: 4,
-                  ),
+                      : const Text('Login'),
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'Sign in with your Google account to get started',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Colors.white70,
-                      ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
+              ),
+              TextButton(
+                onPressed: () {
+                  showSnackBar(
+                    context,
+                    'Navigating to Register Page',
+                    AppColors.warmWheat,
+                  );
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RegisterPage(),
+                    ),
+                  );
+                },
+                child: const Text('Create new account'),
+              ),
+            ],
           ),
         ),
       ),

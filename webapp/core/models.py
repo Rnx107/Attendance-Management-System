@@ -1,6 +1,8 @@
 import uuid
+import secrets
 from django.db import models
 from django.utils import timezone
+from django.contrib.auth.hashers import make_password, check_password
 
 
 class User(models.Model):
@@ -16,7 +18,9 @@ class User(models.Model):
     middlename = models.CharField(max_length=100, blank=True, null=True)
     lastname = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
+    password = models.CharField(max_length=255, blank=True, null=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -26,6 +30,14 @@ class User(models.Model):
 
     def __str__(self):
         return f"{self.firstname} {self.lastname} ({self.role})"
+    
+    def set_password(self, raw_password):
+        """Hash and set password"""
+        self.password = make_password(raw_password)
+    
+    def check_password(self, raw_password):
+        """Check if provided password matches the hashed password"""
+        return check_password(raw_password, self.password)
 
 
 class Course(models.Model):
@@ -159,3 +171,32 @@ class Attendance(models.Model):
 
     def __str__(self):
         return f"{self.student.user} - {self.session} - {self.status}"
+
+
+class ApiKey(models.Model):
+    """Stores a single API key used by the official Flutter app.
+
+    The admin can create or regenerate this key from Django admin. Use
+    `ApiKey.get_solo()` to retrieve the current key (creates one if missing).
+    """
+    key = models.CharField(max_length=128, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'api_key'
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = secrets.token_urlsafe(32)
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def get_solo(cls):
+        obj = cls.objects.first()
+        if not obj:
+            obj = cls.objects.create()
+        return obj
+
+    def __str__(self):
+        return f"ApiKey (created: {self.created_at})"
