@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Mark Attendance - AMS{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Mark Attendance</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold"><i class="bi bi-check2-square me-2"></i>Mark Attendance</h2>
+        <div class="p-3 bg-light rounded-3 mb-4">
+            <div class="row">
+                <div class="col-md-3"><strong>Subject:</strong> {{ session.subject.subject_name }}</div>
+                <div class="col-md-3"><strong>Code:</strong> {{ session.subject.subject_code }}</div>
+                <div class="col-md-3"><strong>Date:</strong> {{ session.session_date }}</div>
+                <div class="col-md-3"><strong>Time:</strong> {{ session.start_time }} - {{ session.end_time }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="px-4 py-3">Student Name</th>
+                            <th class="py-3 text-center">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="fw-bold">{{ student.user.firstname }} {{ student.user.lastname }}</div>
+                                <div class="text-muted small">Enrollment: {{ student.enrollment_year }}</div>
+                            </td>
+                            <td class="py-3 text-center">
+                                <div class="btn-group" role="group" aria-label="Attendance status">
+                                    <input type="radio" class="btn-check" name="status_{{ student.id }}" id="present_{{ student.id }}" value="present" 
+                                           {% if student.current_status == 'present' %}checked{% endif %}>
+                                    <label class="btn btn-outline-success btn-sm px-3" for="present_{{ student.id }}">Present</label>
+
+                                    <input type="radio" class="btn-check" name="status_{{ student.id }}" id="absent_{{ student.id }}" value="absent"
+                                           {% if student.current_status == 'absent' %}checked{% endif %}>
+                                    <label class="btn btn-outline-danger btn-sm px-3" for="absent_{{ student.id }}">Absent</label>
+
+                                    <input type="radio" class="btn-check" name="status_{{ student.id }}" id="late_{{ student.id }}" value="late"
+                                           {% if student.current_status == 'late' %}checked{% endif %}>
+                                    <label class="btn btn-outline-warning btn-sm px-3" for="late_{{ student.id }}">Late</label>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="2" class="text-center text-muted py-5">No students enrolled in this course/semester.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white py-3 border-0 text-end">
+            <button type="submit" class="btn btn-primary px-4 py-2 fw-bold">
+                <i class="bi bi-save me-2"></i>Save Attendance
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+    // Logic to select "Present" by default for all if not set
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const radioButtons = row.querySelectorAll('input[type="radio"]');
+            let checked = false;
+            radioButtons.forEach(radio => {
+                if (radio.checked) checked = true;
+            });
+            if (!checked && radioButtons.length > 0) {
+                radioButtons[0].checked = true; // Default to Present
+            }
+        });
+    });
+</script>
+{% endblock %}

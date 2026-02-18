@@ -2,10 +2,46 @@ import uuid
 import secrets
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.models import AbstractUser, BaseUserManager
+import uuid
+import secrets
 
 
-class User(models.Model):
+class UserManager(BaseUserManager):
+    """Define a model manager for User model with no username field."""
+
+    use_in_migrations = True
+
+    def _create_user(self, email, password, **extra_fields):
+        """Create and save a User with the given email and password."""
+        if not email:
+            raise ValueError('The given email must be set')
+        email = self.normalize_email(email)
+        user = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+    def create_user(self, email, password=None, **extra_fields):
+        """Create and save a regular User with the given email and password."""
+        extra_fields.setdefault('is_staff', False)
+        extra_fields.setdefault('is_superuser', False)
+        return self._create_user(email, password, **extra_fields)
+
+    def create_superuser(self, email, password, **extra_fields):
+        """Create and save a SuperUser with the given email and password."""
+        extra_fields.setdefault('is_staff', True)
+        extra_fields.setdefault('is_superuser', True)
+
+        if extra_fields.get('is_staff') is not True:
+            raise ValueError('Superuser must have is_staff=True.')
+        if extra_fields.get('is_superuser') is not True:
+            raise ValueError('Superuser must have is_superuser=True.')
+
+        return self._create_user(email, password, **extra_fields)
+
+
+class User(AbstractUser):
     """User model for admin, teacher, and student roles"""
     ROLE_CHOICES = [
         ('admin', 'Admin'),
@@ -13,31 +49,26 @@ class User(models.Model):
         ('student', 'Student'),
     ]
     
+    username = None
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     firstname = models.CharField(max_length=100)
     middlename = models.CharField(max_length=100, blank=True, null=True)
     lastname = models.CharField(max_length=100)
     email = models.EmailField(unique=True)
-    password = models.CharField(max_length=255, blank=True, null=True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES)
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = ['firstname', 'lastname']
+
+    objects = UserManager()
 
     class Meta:
         db_table = 'user'
-        ordering = ['-created_at']
+        ordering = ['-date_joined']
 
     def __str__(self):
         return f"{self.firstname} {self.lastname} ({self.role})"
-    
-    def set_password(self, raw_password):
-        """Hash and set password"""
-        self.password = make_password(raw_password)
-    
-    def check_password(self, raw_password):
-        """Check if provided password matches the hashed password"""
-        return check_password(raw_password, self.password)
 
 
 class Course(models.Model):
@@ -99,6 +130,8 @@ class Student(models.Model):
     """Student profile linked to User"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='student_profile')
+    course = models.ForeignKey(Course, on_delete=models.SET_NULL, null=True, related_name='students')
+    current_semester = models.IntegerField(default=1)
     enrollment_year = models.IntegerField()
     updated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='updated_students')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -156,12 +189,21 @@ class Attendance(models.Model):
         ('late', 'Late'),
     ]
     
+    VERIFICATION_CHOICES = [
+        ('pending', 'Pending'),
+        ('verified', 'Verified'),
+        ('rejected', 'Rejected'),
+    ]
+    
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     session = models.ForeignKey(ClassSchedule, on_delete=models.CASCADE, related_name='attendances')
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='attendance_records')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES)
+    verification_status = models.CharField(max_length=20, choices=VERIFICATION_CHOICES, default='pending')
     marked_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='marked_attendances')
     marked_at = models.DateTimeField(default=timezone.now)
+    verified_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='verified_attendances')
+    verified_at = models.DateTimeField(null=True, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

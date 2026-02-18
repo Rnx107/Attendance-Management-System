@@ -5,10 +5,10 @@ from .models import User, Student, Course, Semester, Subject, TeacherSubject, Cl
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ['firstname', 'lastname', 'email', 'role', 'created_at']
-    list_filter = ['role', 'created_at']
+    list_display = ['firstname', 'lastname', 'email', 'role', 'date_joined']
+    list_filter = ['role', 'date_joined']
     search_fields = ['firstname', 'lastname', 'email']
-    readonly_fields = ['id', 'created_at', 'updated_at']
+    readonly_fields = ['id', 'date_joined', 'updated_at']
 
 
 @admin.register(Course)

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Create Session - AMS{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">New Session</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold"><i class="bi bi-calendar-plus me-2"></i>Create New Session</h2>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-body p-4">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="subject" class="form-label fw-bold small">Subject</label>
+                        <select name="subject" id="subject" class="form-select" required>
+                            <option value="">Select a subject...</option>
+                            {% for subject in subjects %}
+                            <option value="{{ subject.id }}">{{ subject.subject_name }} ({{ subject.subject_code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="session_date" class="form-label fw-bold small">Date</label>
+                        <input type="date" name="session_date" id="session_date" class="form-control" value="{{ today }}" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="start_time" class="form-label fw-bold small">Start Time</label>
+                            <input type="time" name="start_time" id="start_time" class="form-control" value="09:00" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="end_time" class="form-label fw-bold small">End Time</label>
+                            <input type="time" name="end_time" id="end_time" class="form-control" value="10:00" required>
+                        </div>
+                    </div>
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold">
+                            <i class="bi bi-plus-lg me-2"></i>Create & Mark Attendance
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

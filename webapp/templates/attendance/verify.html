@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Verify Attendance - AMS{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
+            <li class="breadcrumb-item active">Verify Attendance</li>
+          </ol>
+        </nav>
+        <h2 class="fw-bold"><i class="bi bi-shield-check me-2"></i>Verify Attendance</h2>
+        <div class="p-3 bg-light rounded-3 mb-4 border">
+            <div class="row">
+                <div class="col-md-3"><strong>Subject:</strong> {{ session.subject.subject_name }}</div>
+                <div class="col-md-3"><strong>Code:</strong> {{ session.subject.subject_code }}</div>
+                <div class="col-md-3"><strong>Date:</strong> {{ session.session_date }}</div>
+                <div class="col-md-3"><strong>Time:</strong> {{ session.start_time }} - {{ session.end_time }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="POST">
+    {% csrf_token %}
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-muted small text-uppercase">
+                        <tr>
+                            <th class="px-4 py-3">Student Name</th>
+                            <th class="py-3">Status</th>
+                            <th class="py-3">Marked By</th>
+                            <th class="py-3 text-center">Verification Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for student in students %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="fw-bold">{{ student.user.firstname }} {{ student.user.lastname }}</div>
+                                <div class="text-muted small">ID: {{ student.id|stringformat:".8s" }}...</div>
+                            </td>
+                            <td class="py-3">
+                                <select name="status_{{ student.id }}" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="present" {% if student.attendance.status == 'present' or not student.attendance %}selected{% endif %}>Present</option>
+                                    <option value="absent" {% if student.attendance.status == 'absent' %}selected{% endif %}>Absent</option>
+                                    <option value="late" {% if student.attendance.status == 'late' %}selected{% endif %}>Late</option>
+                                </select>
+                            </td>
+                            <td class="py-3">
+                                {% if student.attendance %}
+                                    <span class="small text-muted">
+                                        <i class="bi bi-clock me-1"></i>{{ student.attendance.marked_at|time:"H:i" }}
+                                        by {% if student.attendance.marked_by.role == 'student' %}Self{% else %}Teacher{% endif %}
+                                    </span>
+                                {% else %}
+                                    <span class="small text-muted italic">Not marked</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-3 text-center">
+                                <div class="btn-group" role="group" aria-label="Verification Action">
+                                    <input type="radio" class="btn-check" name="verify_{{ student.id }}" id="v_verified_{{ student.id }}" value="verified" 
+                                           {% if student.attendance.verification_status == 'verified' or not student.attendance %}checked{% endif %}>
+                                    <label class="btn btn-outline-success btn-sm" for="v_verified_{{ student.id }}">
+                                        <i class="bi bi-check-circle me-1"></i>Verify
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="verify_{{ student.id }}" id="v_rejected_{{ student.id }}" value="rejected"
+                                           {% if student.attendance.verification_status == 'rejected' %}checked{% endif %}>
+                                    <label class="btn btn-outline-danger btn-sm" for="v_rejected_{{ student.id }}">
+                                        <i class="bi bi-x-circle me-1"></i>Reject
+                                    </label>
+                                    
+                                    <input type="radio" class="btn-check" name="verify_{{ student.id }}" id="v_pending_{{ student.id }}" value="pending"
+                                           {% if student.attendance.verification_status == 'pending' %}checked{% endif %}>
+                                    <label class="btn btn-outline-warning btn-sm" for="v_pending_{{ student.id }}">
+                                        <i class="bi bi-clock me-1"></i>Pending
+                                    </label>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-5">No students enrolled in this course/semester.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer bg-white py-3 border-0 text-end border-top">
+            <a href="{% url 'teacher_dashboard' %}" class="btn btn-link text-muted me-2">Back to Dashboard</a>
+            <button type="submit" class="btn btn-success px-5 py-2 fw-bold">
+                <i class="bi bi-shield-check me-2"></i>Save Verification
+            </button>
+        </div>
+    </div>
+</form>
+{% endblock %}

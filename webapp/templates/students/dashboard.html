@@ -1,7 +1,121 @@
 {% extends 'base.html' %}
-{% block title %}Students Dashboard{% endblock %}
+{% block title %}Student Dashboard - AMS{% endblock %}
 {% block content %}
-  <h1>Students Dashboard</h1>
-  <p>Welcome, {{ user.get_full_name|default:user.username }}.</p>
-  <!-- Add student-specific widgets here -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="fw-bold"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h2>
+        <p class="text-muted">Welcome back, {{ user.firstname }} {{ user.lastname }}!</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary mb-3 shadow-sm border-0">
+            <div class="card-body">
+                <h5 class="card-title mb-3 fw-bold"><i class="bi bi-mortarboard-fill me-2"></i>Enrollment</h5>
+                <p class="card-text mb-1"><strong>Course:</strong> {{ student.course.course_name }}</p>
+                <p class="card-text mb-1"><strong>Semester:</strong> {{ student.current_semester }}</p>
+                <p class="card-text mb-1"><strong>Year:</strong> {{ student.enrollment_year }}</p>
+                <p class="card-text small mt-3 opacity-75">Student ID: {{ student.id|stringformat:".8s" }}...</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-body">
+                <h5 class="card-title"><i class="bi bi-check-circle-fill me-2"></i>Attendance</h5>
+                <p class="card-text">Total Records: {{ attendance_records|length }}</p>
+                <p class="card-text small">Latest Status: {% if attendance_records %}{{ attendance_records.0.status|title }}{% else %}N/A{% endif %}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-calendar-check me-2"></i>Today's Classes & Attendance</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for cls in available_classes %}
+                    <div class="col-md-4 mb-3">
+                        <div class="card h-100 bg-light border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="card-title fw-bold">{{ cls.subject.subject_name }}</h6>
+                                <p class="card-text small mb-1"><i class="bi bi-clock me-1"></i>{{ cls.start_time }} - {{ cls.end_time }}</p>
+                                <p class="card-text small mb-3"><i class="bi bi-person me-1"></i>{{ cls.taught_by.firstname }} {{ cls.taught_by.lastname }}</p>
+                                
+                                {% if cls.already_marked %}
+                                <button class="btn btn-sm btn-secondary w-100" disabled>
+                                    <i class="bi bi-check-circle-fill me-1"></i>Already Marked
+                                </button>
+                                {% else %}
+                                <a href="{% url 'student_mark_attendance' cls.id %}" class="btn btn-sm btn-primary w-100">
+                                    <i class="bi bi-plus-circle me-1"></i>Mark Attendance
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-4 text-muted">
+                        <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+                        No classes scheduled for today.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Recent Attendance Records</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Date</th>
+                                <th>Subject</th>
+                                <th>Teacher</th>
+                                <th>Status</th>
+                                <th>Verification</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr>
+                                <td>{{ record.session.session_date }}</td>
+                                <td>{{ record.session.subject.subject_name }}</td>
+                                <td>{{ record.session.taught_by.firstname }} {{ record.session.taught_by.lastname }}</td>
+                                <td>
+                                    <span class="badge {% if record.status == 'present' %}bg-success{% elif record.status == 'absent' %}bg-danger{% else %}bg-warning{% endif %}">
+                                        {{ record.status|title }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge {% if record.verification_status == 'verified' %}bg-info{% elif record.verification_status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">
+                                        {{ record.verification_status|title }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">No attendance records found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}
