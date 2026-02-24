@@ -44,13 +44,15 @@
       </ul>
       <ul class="navbar-nav">
         {% if user.is_authenticated %}
-          <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-              <i class="bi bi-person-circle me-1"></i>{{ user.firstname }} {{ user.lastname }} ({{ user.role|title }})
+          <li class="nav-item">
+            <span class="nav-link text-light">
+              <i class="bi bi-person-circle me-1"></i>Welcome, {{ user.firstname }} ({{ user.role|title }})
+            </span>
+          </li>
+          <li class="nav-item">
+            <a class="btn btn-outline-light" href="{% url 'logout' %}">
+              <i class="bi bi-box-arrow-right me-1"></i>Logout
             </a>
-            <ul class="dropdown-menu dropdown-menu-end">
-              <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
-            </ul>
           </li>
         {% else %}
           <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Login</a></li>

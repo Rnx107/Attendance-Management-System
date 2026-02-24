@@ -23,7 +23,7 @@
                                 <h6 class="card-title fw-bold">{{ subject.subject_name }}</h6>
                                 <p class="card-text small text-muted">Code: {{ subject.subject_code }}</p>
                                 <p class="card-text small text-muted">Semester: {{ subject.semester.semester_no }}</p>
-                                <a href="#" class="btn btn-sm btn-outline-primary mt-2">View Students</a>
+                                <a href="{% url 'teacher_view_students' subject.id %}" class="btn btn-sm btn-outline-primary mt-2">View Students</a>
                             </div>
                         </div>
                     </div>

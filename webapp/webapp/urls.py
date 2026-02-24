@@ -23,5 +23,6 @@ urlpatterns = [
     path('api/', include('core.urls')),
     path('accounts/', include('accounts.urls')),
     path('attendance/', include('attendance.urls')),
+    path('teachers/', include('teachers.urls')),
     path('', RedirectView.as_view(url='accounts/login/', permanent=False), name='home'),
 ]

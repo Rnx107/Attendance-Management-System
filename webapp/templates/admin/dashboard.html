@@ -10,40 +10,48 @@
 
 <div class="row mb-4">
     <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3 text-center py-2 shadow-sm border-0 rounded-3">
+        <a href="/admin/core/user/" class="text-white text-decoration-none">
+        <div class="card bg-primary mb-3 text-center py-2 shadow-sm border-0 rounded-3">
             <div class="card-body">
                 <i class="bi bi-people-fill fs-1 mb-2"></i>
                 <h5 class="card-title mb-0">Total Users</h5>
                 <h2 class="card-text fw-bold mb-0">{{ total_users }}</h2>
             </div>
         </div>
+    </a>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-success mb-3 text-center py-2 shadow-sm border-0 rounded-3">
+    <a href="/admin/core/student/" class="text-white text-decoration-none">
+        <div class="card bg-success mb-3 text-center py-2 shadow-sm border-0 rounded-3">
             <div class="card-body">
                 <i class="bi bi-mortarboard-fill fs-1 mb-2"></i>
                 <h5 class="card-title mb-0">Students</h5>
                 <h2 class="card-text fw-bold mb-0">{{ total_students }}</h2>
             </div>
         </div>
+    </a>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-info mb-3 text-center py-2 shadow-sm border-0 rounded-3">
+    <a href="/admin/core/user/?role__exact=teacher" class="text-white text-decoration-none">
+        <div class="card bg-info mb-3 text-center py-2 shadow-sm border-0 rounded-3">
             <div class="card-body">
                 <i class="bi bi-person-badge-fill fs-1 mb-2"></i>
                 <h5 class="card-title mb-0">Teachers</h5>
                 <h2 class="card-text fw-bold mb-0">{{ total_teachers }}</h2>
             </div>
         </div>
+    </a>
     </div>
     <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3 text-center py-2 shadow-sm border-0 rounded-3">
+    <a href="/admin/core/course/" class="text-white text-decoration-none">
+        <div class="card bg-warning mb-3 text-center py-2 shadow-sm border-0 rounded-3">
             <div class="card-body">
                 <i class="bi bi-journal-check fs-1 mb-2"></i>
                 <h5 class="card-title mb-0">Courses</h5>
                 <h2 class="card-text fw-bold mb-0">{{ total_courses }}</h2>
             </div>
         </div>
+    </a>
     </div>
 </div>
 
