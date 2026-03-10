@@ -22,8 +22,9 @@
                             <div class="card-body">
                                 <h6 class="card-title fw-bold">{{ subject.subject_name }}</h6>
                                 <p class="card-text small text-muted">Code: {{ subject.subject_code }}</p>
-                                <p class="card-text small text-muted">Semester: {{ subject.semester.semester_no }}</p>
-                                <a href="{% url 'teacher_view_students' subject.id %}" class="btn btn-sm btn-outline-primary mt-2">View Students</a>
+                                <p class="card-text small text-muted">Course: {{ subject.course.course_name }}</p>
+                                <a href="{% url 'teacher_view_students' subject.id %}"
+                                    class="btn btn-sm btn-outline-primary mt-2">View Students</a>
                             </div>
                         </div>
                     </div>
@@ -41,7 +42,8 @@
         <div class="card shadow-sm">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
                 <h5 class="mb-0 fw-bold"><i class="bi bi-calendar-event me-2"></i>Classes Schedule & Attendance</h5>
-                <a href="{% url 'create_session' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>New Session</a>
+                <a href="{% url 'create_session' %}" class="btn btn-sm btn-primary"><i
+                        class="bi bi-plus-lg me-1"></i>New Session</a>
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -57,15 +59,27 @@
                         <tbody>
                             {% for class in upcoming_classes %}
                             <tr>
-                                <td>{{ class.session_date }}</td>
+                                <td>
+                                    {{ class.session_date }}
+                                    {% if class.is_today %}
+                                    <span class="badge bg-warning text-dark ms-1"
+                                        style="font-size: 0.65rem;">Today</span>
+                                    {% elif class.is_past %}
+                                    <span class="badge bg-secondary ms-1" style="font-size: 0.65rem;">Past</span>
+                                    {% else %}
+                                    <span class="badge bg-info ms-1" style="font-size: 0.65rem;">Upcoming</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ class.subject.subject_name }}</td>
                                 <td>{{ class.start_time }} - {{ class.end_time }}</td>
                                 <td>
                                     <div class="btn-group">
-                                        <a href="{% url 'mark_attendance' class.id %}" class="btn btn-sm btn-outline-primary">
+                                        <a href="{% url 'mark_attendance' class.id %}"
+                                            class="btn btn-sm btn-outline-primary">
                                             <i class="bi bi-pencil me-1"></i>Edit
                                         </a>
-                                        <a href="{% url 'teacher_verify_attendance' class.id %}" class="btn btn-sm btn-success">
+                                        <a href="{% url 'teacher_verify_attendance' class.id %}"
+                                            class="btn btn-sm btn-success">
                                             <i class="bi bi-shield-check me-1"></i>Verify
                                         </a>
                                     </div>

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} - AMS{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="fw-bold"><i class="bi bi-book me-2"></i>{{ page_title }}</h2>
+    <a href="{% url 'subject_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Add New Subject
+    </a>
+</div>
+
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body bg-light">
+        <form method="GET" class="row gx-3 align-items-center">
+            <div class="col-auto">
+                <label class="col-form-label fw-bold">Filter by Course:</label>
+            </div>
+            <div class="col-md-4">
+                <select name="course" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Courses</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}" {% if course_filter==course.id|stringformat:"s" %}selected{% endif
+                        %}>
+                        {{ course.course_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% if course_filter %}
+            <div class="col-auto">
+                <a href="{% url 'subject_list' %}" class="btn btn-outline-secondary btn-sm">Clear Filter</a>
+            </div>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    {% for subject in subjects %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card shadow-sm border-0 h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="fw-bold text-primary mb-0">{{ subject.subject_name }}</h5>
+                    <span class="badge bg-info rounded-pill">{{ subject.subject_code }}</span>
+                </div>
+
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-building me-1"></i>
+                    {{ subject.course.course_name }}
+                </p>
+
+                <h6 class="fw-bold mb-2">Assigned Teachers:</h6>
+                <div class="mb-3">
+                    {% for teacher in subject.assigned_teachers %}
+                    <div class="d-inline-flex align-items-center bg-light rounded-pill px-3 py-1 border mb-1 me-1">
+                        <i class="bi bi-person-badge text-primary me-2"></i>
+                        <span class="small dw-semibold">{{ teacher.firstname }} {{ teacher.lastname }}</span>
+                    </div>
+                    {% empty %}
+                    <span class="text-muted small fst-italic">No teachers assigned</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer bg-white border-0 text-end pb-3">
+                <a href="{% url 'teacher_view_students' subject.id %}" class="btn btn-sm btn-outline-info me-1">
+                    <i class="bi bi-people me-1"></i>View Students
+                </a>
+                <a href="{% url 'subject_edit' subject.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i>Edit Subject
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12 text-center py-5">
+        <div class="mb-3">
+            <i class="bi bi-journal-x text-muted" style="font-size: 3rem;"></i>
+        </div>
+        <h5 class="text-muted">No subjects found</h5>
+        {% if course_filter %}
+        <p class="text-muted small">Try selecting a different course or clear the filter.</p>
+        {% else %}
+        <p class="text-muted small">Get started by adding a new subject.</p>
+        <a href="{% url 'subject_create' %}" class="btn btn-primary mt-2">Add Subject</a>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

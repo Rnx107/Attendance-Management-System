@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} - AMS{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-person-plus me-2"></i>{{ page_title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">First Name</label>
+                            <input type="text" name="firstname" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Last Name</label>
+                            <input type="text" name="lastname" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Role</label>
+                        <select name="role" id="role-select" class="form-select" required
+                            onchange="toggleStudentFields()">
+                            <option value="admin">Admin</option>
+                            <option value="teacher">Teacher</option>
+                            <option value="student">Student</option>
+                        </select>
+                    </div>
+
+                    <div id="student-fields" style="display: none;">
+                        <hr>
+                        <h5 class="mb-3">Student Details</h5>
+                        <div class="mb-3">
+                            <label class="form-label">Course</label>
+                            <select name="course" class="form-select">
+                                <option value="">Select Course</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Enrollment Year</label>
+                            <input type="number" name="enrollment_year" class="form-control" value="2025">
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-grid gap-2">
+                        <button type="submit" class="btn btn-primary py-2 fw-bold">Create User</button>
+                        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleStudentFields() {
+        const role = document.getElementById('role-select').value;
+        const studentFields = document.getElementById('student-fields');
+        if (role === 'student') {
+            studentFields.style.display = 'block';
+        } else {
+            studentFields.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

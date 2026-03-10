@@ -32,6 +32,7 @@ class UserManager(BaseUserManager):
         """Create and save a SuperUser with the given email and password."""
         extra_fields.setdefault('is_staff', True)
         extra_fields.setdefault('is_superuser', True)
+        extra_fields.setdefault('role', 'admin')
 
         if extra_fields.get('is_staff') is not True:
             raise ValueError('Superuser must have is_staff=True.')
@@ -110,9 +111,9 @@ class Semester(models.Model):
 
 
 class Subject(models.Model):
-    """Subject model for each semester"""
+    """Subject model linked to a Course"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='subjects')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='subjects', null=True)
     subject_code = models.CharField(max_length=50, unique=True)
     subject_name = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -176,6 +177,14 @@ class ClassSchedule(models.Model):
     class Meta:
         db_table = 'class_schedule'
         ordering = ['-session_date', 'start_time']
+
+    @property
+    def is_today(self):
+        return self.session_date == timezone.now().date()
+
+    @property
+    def is_past(self):
+        return self.session_date < timezone.now().date()
 
     def __str__(self):
         return f"{self.subject} on {self.session_date} at {self.start_time}"

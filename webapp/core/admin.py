@@ -29,8 +29,8 @@ class SemesterAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ['subject_code', 'subject_name', 'semester', 'created_at']
-    list_filter = ['semester__course']
+    list_display = ['subject_code', 'subject_name', 'course', 'created_at']
+    list_filter = ['course']
     search_fields = ['subject_code', 'subject_name']
     readonly_fields = ['id', 'created_at', 'updated_at']
 
@@ -46,7 +46,7 @@ class StudentAdmin(admin.ModelAdmin):
 @admin.register(TeacherSubject)
 class TeacherSubjectAdmin(admin.ModelAdmin):
     list_display = ['teacher', 'subject', 'created_at']
-    list_filter = ['subject__semester__course']
+    list_filter = ['subject__course']
     search_fields = ['teacher__firstname', 'teacher__lastname', 'subject__subject_name']
     readonly_fields = ['id', 'created_at', 'updated_at']
 
@@ -54,7 +54,7 @@ class TeacherSubjectAdmin(admin.ModelAdmin):
 @admin.register(ClassSchedule)
 class ClassScheduleAdmin(admin.ModelAdmin):
     list_display = ['subject', 'session_date', 'start_time', 'end_time', 'taught_by']
-    list_filter = ['session_date', 'subject__semester__course']
+    list_filter = ['session_date', 'subject__course']
     search_fields = ['subject__subject_name', 'taught_by__firstname', 'taught_by__lastname']
     readonly_fields = ['id', 'created_at', 'updated_at']
     date_hierarchy = 'session_date'

@@ -1,10 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_protect
-from core.models import User, Student, TeacherSubject, ClassSchedule, Attendance, Subject, Course
+from core.models import User, Student, TeacherSubject, ClassSchedule, Attendance, Subject, Course, Semester
 from django.db.models import Count, Q
 from django.utils import timezone
 
@@ -84,8 +84,7 @@ def student_dashboard(request):
         # Get available classes for today that match student's course and semester
         today = timezone.now().date()
         available_classes = ClassSchedule.objects.filter(
-            subject__semester__course=student.course,
-            subject__semester__semester_no=student.current_semester,
+            subject__course=student.course,
             session_date=today
         ).select_related('subject', 'taught_by')
         
@@ -123,16 +122,17 @@ def teacher_dashboard(request):
             teacher_assignments__teacher=user
         ).distinct()
         
-        # Get upcoming classes
-        upcoming_classes = ClassSchedule.objects.filter(
+        # Get recent and upcoming classes (last 3 days + future)
+        three_days_ago = timezone.now().date() - timezone.timedelta(days=3)
+        recent_and_upcoming = ClassSchedule.objects.filter(
             taught_by=user,
-            session_date__gte=timezone.now().date()
-        ).order_by('session_date', 'start_time')[:10]
+            session_date__gte=three_days_ago
+        ).order_by('-session_date', 'start_time')[:15]
         
         context = {
             'user': user,
             'subjects_taught': subjects_taught,
-            'upcoming_classes': upcoming_classes,
+            'upcoming_classes': recent_and_upcoming,
             'page_title': 'Teacher Dashboard'
         }
         return render(request, 'teachers/dashboard.html', context)
@@ -172,3 +172,255 @@ def admin_dashboard(request):
     except Exception as e:
         messages.error(request, f'Error loading dashboard: {str(e)}')
         return redirect('login')
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def user_list(request):
+    """View to list all users with role filtering"""
+    role_filter = request.GET.get('role')
+    users = User.objects.all()
+    if role_filter:
+        users = users.filter(role=role_filter)
+    
+    context = {
+        'users': users,
+        'role_filter': role_filter,
+        'page_title': 'User Management'
+    }
+    return render(request, 'admin/user_list.html', context)
+
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def user_create(request):
+    """View to register new users"""
+    if request.method == 'POST':
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        firstname = request.POST.get('firstname')
+        lastname = request.POST.get('lastname')
+        role = request.POST.get('role')
+        
+        if email and password and firstname and lastname and role:
+            if User.objects.filter(email=email).exists():
+                messages.error(request, 'User with this email already exists.')
+            else:
+                user = User.objects.create_user(
+                    email=email,
+                    password=password,
+                    firstname=firstname,
+                    lastname=lastname,
+                    role=role
+                )
+                
+                # If student, create student profile
+                if role == 'student':
+                    enrollment_year = request.POST.get('enrollment_year')
+                    course_id = request.POST.get('course')
+                    if enrollment_year and course_id:
+                        course = get_object_or_404(Course, id=course_id)
+                        Student.objects.create(
+                            user=user,
+                            course=course,
+                            enrollment_year=enrollment_year
+                        )
+                
+                messages.success(request, f'User {email} created successfully.')
+                return redirect('user_list')
+        else:
+            messages.error(request, 'All fields are required.')
+            
+    courses = Course.objects.all()
+    context = {
+        'courses': courses,
+        'page_title': 'Register New User'
+    }
+    return render(request, 'admin/user_form.html', context)
+
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def user_delete(request, user_id):
+    """View to delete a user"""
+    user_to_delete = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        email = user_to_delete.email
+        user_to_delete.delete()
+        messages.success(request, f'User {email} deleted successfully.')
+        return redirect('user_list')
+    
+    return render(request, 'admin/user_confirm_delete.html', {'user_to_delete': user_to_delete})
+
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def course_list(request):
+    """View to list all courses"""
+    courses = Course.objects.all().prefetch_related('semesters')
+    context = {
+        'courses': courses,
+        'page_title': 'Course Management'
+    }
+    return render(request, 'admin/course_list.html', context)
+
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def course_create(request):
+    """View to create a new course"""
+    if request.method == 'POST':
+        name = request.POST.get('course_name')
+        if name:
+            Course.objects.create(course_name=name)
+            messages.success(request, f'Course {name} created successfully.')
+            return redirect('course_list')
+        messages.error(request, 'Course name is required.')
+    
+    return render(request, 'admin/course_form.html', {'page_title': 'Create Course'})
+
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def course_edit(request, course_id):
+    """View to edit an existing course"""
+    course = get_object_or_404(Course, id=course_id)
+    if request.method == 'POST':
+        name = request.POST.get('course_name')
+        status = request.POST.get('status')
+        if name:
+            course.course_name = name
+            if status in ['active', 'inactive']:
+                course.status = status
+            course.save()
+            messages.success(request, f'Course {name} updated successfully.')
+            return redirect('course_list')
+        messages.error(request, 'Course name is required.')
+    
+    return render(request, 'admin/course_form.html', {
+        'page_title': 'Edit Course',
+        'course': course,
+    })
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def subject_list(request):
+    """View to list all subjects"""
+    course_filter = request.GET.get('course')
+    subjects = Subject.objects.all().select_related('course')
+    
+    if course_filter:
+        subjects = subjects.filter(course_id=course_filter)
+        
+    # Get teacher assignments for these subjects
+    for subject in subjects:
+        assignments = TeacherSubject.objects.filter(subject=subject).select_related('teacher')
+        subject.assigned_teachers = [a.teacher for a in assignments]
+        
+    courses = Course.objects.all()
+    context = {
+        'subjects': subjects,
+        'courses': courses,
+        'course_filter': course_filter,
+        'page_title': 'Subject Management'
+    }
+    return render(request, 'admin/subject_list.html', context)
+
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def subject_create(request):
+    """View to create a new subject and assign a teacher"""
+    if request.method == 'POST':
+        code = request.POST.get('subject_code')
+        name = request.POST.get('subject_name')
+        course_id = request.POST.get('course')
+        teacher_id = request.POST.get('teacher')
+        
+        if code and name and course_id:
+            try:
+                course = get_object_or_404(Course, id=course_id)
+                subject = Subject.objects.create(
+                    subject_code=code,
+                    subject_name=name,
+                    course=course
+                )
+                
+                if teacher_id:
+                    teacher = get_object_or_404(User, id=teacher_id, role='teacher')
+                    TeacherSubject.objects.create(subject=subject, teacher=teacher)
+                    
+                messages.success(request, f'Subject {name} created successfully.')
+                return redirect('subject_list')
+            except Exception as e:
+                messages.error(request, f'Error creating subject: {str(e)}')
+        else:
+            messages.error(request, 'Subject code, name, and course are required.')
+            
+    courses = Course.objects.all()
+    teachers = User.objects.filter(role='teacher')
+    return render(request, 'admin/subject_form.html', {
+        'page_title': 'Create Subject',
+        'courses': courses,
+        'teachers': teachers
+    })
+
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def subject_edit(request, subject_id):
+    """View to edit an existing subject and its teacher assignment"""
+    subject = get_object_or_404(Subject, id=subject_id)
+    
+    if request.method == 'POST':
+        code = request.POST.get('subject_code')
+        name = request.POST.get('subject_name')
+        course_id = request.POST.get('course')
+        teacher_id = request.POST.get('teacher')
+        
+        if code and name and course_id:
+            try:
+                course = get_object_or_404(Course, id=course_id)
+                subject.subject_code = code
+                subject.subject_name = name
+                subject.course = course
+                subject.save()
+                
+                # Handle teacher assignment
+                TeacherSubject.objects.filter(subject=subject).delete()
+                if teacher_id:
+                    teacher = get_object_or_404(User, id=teacher_id, role='teacher')
+                    TeacherSubject.objects.create(subject=subject, teacher=teacher)
+                    
+                messages.success(request, f'Subject {name} updated successfully.')
+                return redirect('subject_list')
+            except Exception as e:
+                messages.error(request, f'Error updating subject: {str(e)}')
+        else:
+            messages.error(request, 'Subject code, name, and course are required.')
+            
+    courses = Course.objects.all()
+    teachers = User.objects.filter(role='teacher')
+    
+    # Get current teacher assignment
+    current_assignment = TeacherSubject.objects.filter(subject=subject).first()
+    assigned_teacher_id = current_assignment.teacher.id if current_assignment else None
+    
+    return render(request, 'admin/subject_form.html', {
+        'page_title': 'Edit Subject',
+        'subject': subject,
+        'courses': courses,
+        'teachers': teachers,
+        'assigned_teacher_id': assigned_teacher_id
+    })
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def attendance_history(request):
+    """View for full attendance history"""
+    attendance_records = Attendance.objects.all().select_related(
+        'student__user', 'session__subject', 'session__taught_by'
+    ).order_by('-marked_at')
+    
+    context = {
+        'attendance_records': attendance_records,
+        'page_title': 'Attendance History'
+    }
+    return render(request, 'admin/attendance_history.html', context)

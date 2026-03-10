@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
-from core.models import User, Student, ClassSchedule, Attendance, Subject, Semester
+from core.models import User, Student, ClassSchedule, Attendance, Subject
 from django.utils import timezone
 
 def student_check(user):
@@ -17,10 +17,9 @@ def student_mark_attendance(request, session_id):
     session = get_object_or_404(ClassSchedule, id=session_id)
     student = request.user.student_profile
     
-    # Check if session is for student's course and semester
-    if session.subject.semester.course != student.course or \
-       session.subject.semester.semester_no != student.current_semester:
-        messages.error(request, "You are not enrolled in this subject's semester.")
+    # Check if session is for student's course
+    if session.subject.course != student.course:
+        messages.error(request, "You are not enrolled in this subject's course.")
         return redirect('student_dashboard')
     
     # Check if session is today
@@ -62,8 +61,7 @@ def mark_attendance(request, session_id):
         return redirect('teacher_dashboard')
 
     students = Student.objects.filter(
-        course=session.subject.semester.course,
-        current_semester=session.subject.semester.semester_no
+        course=session.subject.course
     ).select_related('user').order_by('user__lastname', 'user__firstname')
     
     existing_attendance = Attendance.objects.filter(session=session)
@@ -111,8 +109,7 @@ def teacher_verify_attendance(request, session_id):
         return redirect('teacher_dashboard')
 
     students = Student.objects.filter(
-        course=session.subject.semester.course,
-        current_semester=session.subject.semester.semester_no
+        course=session.subject.course
     ).select_related('user').order_by('user__lastname', 'user__firstname')
     
     attendance_records = Attendance.objects.filter(session=session).select_related('student__user')

@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} - AMS{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-book me-2"></i>{{ page_title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Subject Name</label>
+                        <input type="text" name="subject_name" class="form-control"
+                            placeholder="e.g. Introduction to Programming" value="{{ subject.subject_name|default:'' }}"
+                            required>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Subject Code</label>
+                            <input type="text" name="subject_code" class="form-control" placeholder="e.g. CS101"
+                                value="{{ subject.subject_code|default:'' }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Course</label>
+                            <select name="course" class="form-select" required>
+                                <option value="">-- Select Course --</option>
+                                {% for course in courses %}
+                                {% if subject and subject.course_id == course.id %}
+                                <option value="{{ course.id }}" selected>{{ course.course_name }}</option>
+                                {% elif request.GET.course == course.id|stringformat:"s" %}
+                                <option value="{{ course.id }}" selected>{{ course.course_name }}</option>
+                                {% else %}
+                                <option value="{{ course.id }}">{{ course.course_name }}</option>
+                                {% endif %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="text-muted opacity-50 mb-4">
+
+                    <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-person-badge me-2"></i>Teacher Assignment</h5>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Assign a Teacher (Optional)</label>
+                        <select name="teacher" class="form-select">
+                            <option value="">-- No Teacher Assigned --</option>
+                            {% for teacher in teachers %}
+                            {% if assigned_teacher_id == teacher.id %}
+                            <option value="{{ teacher.id }}" selected>
+                                {{ teacher.firstname }} {{ teacher.middlename|default:'' }} {{ teacher.lastname }} ({{
+                                teacher.email }})
+                            </option>
+                            {% else %}
+                            <option value="{{ teacher.id }}">
+                                {{ teacher.firstname }} {{ teacher.middlename|default:'' }} {{ teacher.lastname }} ({{
+                                teacher.email }})
+                            </option>
+                            {% endif %}
+                            {% endfor %}
+                        </select>
+                        <div class="form-text mt-2"><i class="bi bi-info-circle me-1"></i>You can assign a teacher to
+                            this subject here, or leave blank and assign later.</div>
+                    </div>
+
+                    <div class="mt-5 d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'subject_list' %}" class="btn btn-outline-secondary px-4 me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-5 fw-bold">
+                            {% if subject %}<i class="bi bi-check2-circle me-1"></i>Update Subject{% else %}<i
+                                class="bi bi-plus-circle me-1"></i>Create Subject{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
