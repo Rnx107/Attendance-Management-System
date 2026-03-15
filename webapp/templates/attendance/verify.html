@@ -6,10 +6,10 @@
         <nav aria-label="breadcrumb">
           <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{% url 'teacher_dashboard' %}">Dashboard</a></li>
-            <li class="breadcrumb-item active">Verify Attendance</li>
+            <li class="breadcrumb-item active">Edit Attendance</li>
           </ol>
         </nav>
-        <h2 class="fw-bold"><i class="bi bi-shield-check me-2"></i>Verify Attendance</h2>
+        <h2 class="fw-bold"><i class="bi bi-pencil-square me-2"></i>Edit Attendance</h2>
         <div class="p-3 bg-light rounded-3 mb-4 border">
             <div class="row">
                 <div class="col-md-3"><strong>Subject:</strong> {{ session.subject.subject_name }}</div>
@@ -32,7 +32,6 @@
                             <th class="px-4 py-3">Student Name</th>
                             <th class="py-3">Status</th>
                             <th class="py-3">Marked By</th>
-                            <th class="py-3 text-center">Verification Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -59,31 +58,10 @@
                                     <span class="small text-muted italic">Not marked</span>
                                 {% endif %}
                             </td>
-                            <td class="py-3 text-center">
-                                <div class="btn-group" role="group" aria-label="Verification Action">
-                                    <input type="radio" class="btn-check" name="verify_{{ student.id }}" id="v_verified_{{ student.id }}" value="verified" 
-                                           {% if student.attendance.verification_status == 'verified' or not student.attendance %}checked{% endif %}>
-                                    <label class="btn btn-outline-success btn-sm" for="v_verified_{{ student.id }}">
-                                        <i class="bi bi-check-circle me-1"></i>Verify
-                                    </label>
-
-                                    <input type="radio" class="btn-check" name="verify_{{ student.id }}" id="v_rejected_{{ student.id }}" value="rejected"
-                                           {% if student.attendance.verification_status == 'rejected' %}checked{% endif %}>
-                                    <label class="btn btn-outline-danger btn-sm" for="v_rejected_{{ student.id }}">
-                                        <i class="bi bi-x-circle me-1"></i>Reject
-                                    </label>
-                                    
-                                    <input type="radio" class="btn-check" name="verify_{{ student.id }}" id="v_pending_{{ student.id }}" value="pending"
-                                           {% if student.attendance.verification_status == 'pending' %}checked{% endif %}>
-                                    <label class="btn btn-outline-warning btn-sm" for="v_pending_{{ student.id }}">
-                                        <i class="bi bi-clock me-1"></i>Pending
-                                    </label>
-                                </div>
-                            </td>
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-5">No students enrolled in this course/semester.</td>
+                            <td colspan="3" class="text-center text-muted py-5">No students enrolled in this course/semester.</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -93,7 +71,7 @@
         <div class="card-footer bg-white py-3 border-0 text-end border-top">
             <a href="{% url 'teacher_dashboard' %}" class="btn btn-link text-muted me-2">Back to Dashboard</a>
             <button type="submit" class="btn btn-success px-5 py-2 fw-bold">
-                <i class="bi bi-shield-check me-2"></i>Save Verification
+                <i class="bi bi-save me-2"></i>Save Attendance
             </button>
         </div>
     </div>

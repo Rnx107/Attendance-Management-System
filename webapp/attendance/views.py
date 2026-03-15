@@ -89,6 +89,8 @@ def mark_attendance(request, session_id):
                     }
                 )
         messages.success(request, f"Attendance for {session.subject.subject_name} marked and verified successfully.")
+        if request.user.role == 'admin':
+            return redirect('admin_dashboard')
         return redirect('teacher_dashboard')
     
     student_list = []
@@ -123,7 +125,6 @@ def teacher_verify_attendance(request, session_id):
     if request.method == 'POST':
         for student in students:
             status = request.POST.get(f'status_{student.id}')
-            v_status = request.POST.get(f'verify_{student.id}')
             
             if status:
                 Attendance.objects.update_or_create(
@@ -131,13 +132,13 @@ def teacher_verify_attendance(request, session_id):
                     student=student,
                     defaults={
                         'status': status,
-                        'verification_status': v_status if v_status else 'verified',
+                        'verification_status': 'verified',
                         'verified_by': request.user,
                         'verified_at': timezone.now()
                     }
                 )
         messages.success(request, f"Attendance for {session.subject.subject_name} verified successfully.")
-        return redirect('teacher_dashboard')
+        return redirect('teacher_view_students', subject_id=session.subject.id)
     
     student_list = []
     for s in students:

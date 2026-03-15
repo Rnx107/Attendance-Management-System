@@ -21,7 +21,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card mb-3 shadow-sm border-0 rounded-3 {% if overall_pct >= 75 %}bg-success{% elif overall_pct >= 50 %}bg-warning{% else %}bg-danger{% endif %} text-white">
+        <div class="card mb-3 shadow-sm border-0 rounded-3 {% if overall_pct >= 70 %}bg-success{% elif overall_pct >= 50 %}bg-warning{% else %}bg-danger{% endif %} text-white">
             <div class="card-body text-center">
                 <h6 class="card-title mb-1 fw-bold opacity-75"><i class="bi bi-pie-chart-fill me-1"></i>Overall Attendance</h6>
                 <div class="fs-1 fw-bold">{{ overall_pct }}%</div>
@@ -35,7 +35,7 @@
                 <h6 class="card-title mb-1 fw-bold opacity-75"><i class="bi bi-exclamation-triangle-fill me-1"></i>At Risk</h6>
                 <div class="fs-1 fw-bold">{{ subjects_at_risk }}</div>
                 <p class="card-text small mb-0 opacity-75">
-                    {% if subjects_at_risk > 0 %}subject{{ subjects_at_risk|pluralize }} below 75%{% else %}All good! Above 75%{% endif %}
+                    {% if subjects_at_risk > 0 %}subject{{ subjects_at_risk|pluralize }} below 70%{% else %}All good! Above 70%{% endif %}
                 </p>
             </div>
         </div>
@@ -77,12 +77,12 @@
                                 <div class="mb-2">
                                     <div class="d-flex justify-content-between small mb-1">
                                         <span class="fw-semibold text-muted">Attendance</span>
-                                        <span class="fw-bold {% if subject.attendance_pct >= 75 %}text-success{% elif subject.attendance_pct >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                                        <span class="fw-bold {% if subject.attendance_pct >= 70 %}text-success{% elif subject.attendance_pct >= 50 %}text-warning{% else %}text-danger{% endif %}">
                                             {{ subject.attendance_pct }}%
                                         </span>
                                     </div>
                                     <div class="progress" style="height: 8px;">
-                                        <div class="progress-bar {% if subject.attendance_pct >= 75 %}bg-success{% elif subject.attendance_pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                        <div class="progress-bar {% if subject.attendance_pct >= 70 %}bg-success{% elif subject.attendance_pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
                                              role="progressbar" 
                                              style="width: {{ subject.attendance_pct }}%">
                                         </div>

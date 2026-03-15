@@ -139,7 +139,7 @@ def student_dashboard(request):
         total_classes_all = sum(s.total_classes for s in semester_subjects)
         total_present_all = sum(s.present_count for s in semester_subjects)
         overall_pct = round((total_present_all / total_classes_all) * 100, 1) if total_classes_all > 0 else 0
-        subjects_at_risk = sum(1 for s in semester_subjects if s.attendance_pct < 75 and s.total_classes > 0)
+        subjects_at_risk = sum(1 for s in semester_subjects if s.attendance_pct < 70 and s.total_classes > 0)
 
         context = {
             'user': user,
