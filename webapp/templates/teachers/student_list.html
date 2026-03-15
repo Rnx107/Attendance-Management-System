@@ -3,9 +3,21 @@
 {% block content %}
 <div class="container mt-4">
     <div class="row mb-4">
-        <div class="col-md-12">
+        <div class="col-md-8">
             <h2 class="fw-bold"><i class="bi bi-people-fill me-2"></i>{{ page_title }}</h2>
             <p class="text-muted">A list of all students enrolled in {{ subject.subject_name }}.</p>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 mb-3">
+                <div class="card-header bg-white border-0 py-2">
+                    <h6 class="mb-0 fw-bold text-center">Subject Attendance</h6>
+                </div>
+                <div class="card-body py-1">
+                    <div style="position: relative; height: 180px; width: 100%;">
+                        <canvas id="subjectPieChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -23,8 +35,7 @@
                                 <a href="{% url 'teacher_verify_attendance' session.id %}"
                                     class="text-decoration-none text-dark" title="Edit/Verify Attendance">
                                     <div>{{ session.session_date|date:"M d" }}</div>
-                                    <div class="text-muted" style="font-size: 0.7rem;">{{ session.start_time|time:"H:i"
-                                        }}</div>
+                                    <div class="text-muted" style="font-size: 0.7rem;">{{ session.start_time|time:"H:i" }}–{{ session.end_time|time:"H:i" }}</div>
                                     <i class="bi bi-pencil-square x-small text-primary opacity-50"></i>
                                 </a>
                             </th>
@@ -69,4 +80,41 @@
         </a>
     </div>
 </div>
+
+<!-- Chart.js CDN and initialization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const ctx = document.getElementById('subjectPieChart').getContext('2d');
+        const dataArr = JSON.parse('{{ chart_data_json|safe }}');
+
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Present', 'Absent', 'Late'],
+                datasets: [{
+                    data: dataArr,
+                    backgroundColor: [
+                        'rgba(25, 135, 84, 0.8)',   // Success (Present)
+                        'rgba(220, 53, 69, 0.8)',   // Danger (Absent)
+                        'rgba(255, 193, 7, 0.8)'    // Warning (Late)
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            boxWidth: 12
+                        }
+                    }
+                }
+            }
+        });
+    });
+</script>
 {% endblock %}

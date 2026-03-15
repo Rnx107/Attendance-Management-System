@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} - AMS{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+            <div class="card-header bg-white py-3 border-0">
+                <h4 class="mb-0 fw-bold"><i class="bi bi-pencil-square me-2"></i>{{ page_title }}</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    
+                    <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-person me-2"></i>Personal Info</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">First Name</label>
+                            <input type="text" name="firstname" class="form-control" value="{{ user_obj.firstname }}" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-semibold">Last Name</label>
+                            <input type="text" name="lastname" class="form-control" value="{{ user_obj.lastname }}" required>
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" class="form-control" value="{{ user_obj.email }}" disabled>
+                            <div class="form-text">Email cannot be changed.</div>
+                        </div>
+                    </div>
+                    
+                    <hr class="text-muted opacity-50 mb-4">
+                    
+                    <h5 class="fw-bold mb-3 text-success"><i class="bi bi-mortarboard me-2"></i>Academic Info</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Course</label>
+                            <select name="course" id="courseSelect" class="form-select" required>
+                                <option value="">-- Select Course --</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}" {% if student.course_id == course.id %}selected{% endif %}>
+                                    {{ course.course_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Current Semester</label>
+                            <select name="current_semester" id="semesterSelect" class="form-select" data-current="{{ student.current_semester }}" required>
+                                <option value="">-- Select Semester --</option>
+                                {% for sem in semesters %}
+                                <option value="{{ sem.semester_no }}" {% if student.current_semester == sem.semester_no %}selected{% endif %}>
+                                    Semester {{ sem.semester_no }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-semibold">Enrollment Year</label>
+                            <input type="number" name="enrollment_year" class="form-control" value="{{ student.enrollment_year }}" min="2000" max="2100" required>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <a href="{% url 'user_list' %}?role=student" class="btn btn-outline-secondary px-4 me-md-2">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-5 fw-bold">
+                            <i class="bi bi-check2-circle me-1"></i>Update Student
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const courseSelect = document.getElementById('courseSelect');
+    const semesterSelect = document.getElementById('semesterSelect');
+    const currentSemester = parseInt(semesterSelect.dataset.current || '0');
+    
+    courseSelect.addEventListener('change', function() {
+        const courseId = this.value;
+        if (!courseId) {
+            semesterSelect.innerHTML = '<option value="">-- Select Semester --</option>';
+            return;
+        }
+        
+        fetch('/accounts/api/semesters/?course=' + courseId)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                semesterSelect.innerHTML = '<option value="">-- Select Semester --</option>';
+                data.forEach(function(sem) {
+                    var opt = document.createElement('option');
+                    opt.value = sem.semester_no;
+                    opt.textContent = 'Semester ' + sem.semester_no;
+                    if (sem.semester_no === currentSemester) opt.selected = true;
+                    semesterSelect.appendChild(opt);
+                });
+            })
+            .catch(function() {
+                semesterSelect.innerHTML = '<option value="">-- Select Semester --</option>';
+                for (var i = 1; i <= 8; i++) {
+                    var opt = document.createElement('option');
+                    opt.value = i;
+                    opt.textContent = 'Semester ' + i;
+                    if (i === currentSemester) opt.selected = true;
+                    semesterSelect.appendChild(opt);
+                }
+            });
+    });
+});
+</script>
+{% endblock %}

@@ -4,6 +4,7 @@ from django.contrib.auth import authenticate, login as auth_login, logout as aut
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_protect
+from django.http import JsonResponse
 from core.models import User, Student, TeacherSubject, ClassSchedule, Attendance, Subject, Course, Semester
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -97,11 +98,58 @@ def student_dashboard(request):
         for cls in available_classes:
             cls.already_marked = cls.id in marked_sessions
 
+        # Get current semester subjects for the student
+        current_semester_obj = Semester.objects.filter(
+            course=student.course,
+            semester_no=student.current_semester
+        ).first()
+        
+        semester_subjects = list(
+            Subject.objects.filter(
+                course=student.course,
+                semester=current_semester_obj
+            ).select_related('course', 'semester').order_by('subject_name')
+        ) if current_semester_obj else []
+        
+        # Calculate per-subject attendance stats
+        for subject in semester_subjects:
+            total_classes = ClassSchedule.objects.filter(subject=subject).count()
+            present_count = Attendance.objects.filter(
+                student=student,
+                session__subject=subject,
+                status='present'
+            ).count()
+            absent_count = Attendance.objects.filter(
+                student=student,
+                session__subject=subject,
+                status='absent'
+            ).count()
+            attended = Attendance.objects.filter(
+                student=student,
+                session__subject=subject
+            ).count()
+            
+            subject.total_classes = total_classes
+            subject.present_count = present_count
+            subject.absent_count = absent_count
+            subject.attended_count = attended
+            subject.attendance_pct = round((present_count / total_classes) * 100, 1) if total_classes > 0 else 0
+
+        # Overall stats across all subjects
+        total_classes_all = sum(s.total_classes for s in semester_subjects)
+        total_present_all = sum(s.present_count for s in semester_subjects)
+        overall_pct = round((total_present_all / total_classes_all) * 100, 1) if total_classes_all > 0 else 0
+        subjects_at_risk = sum(1 for s in semester_subjects if s.attendance_pct < 75 and s.total_classes > 0)
+
         context = {
             'user': user,
             'student': student,
-            'attendance_records': attendance_records,
-            'available_classes': available_classes,
+            'current_semester_obj': current_semester_obj,
+            'semester_subjects': semester_subjects,
+            'overall_pct': overall_pct,
+            'total_classes_all': total_classes_all,
+            'total_present_all': total_present_all,
+            'subjects_at_risk': subjects_at_risk,
             'page_title': 'Student Dashboard'
         }
         return render(request, 'students/dashboard.html', context)
@@ -111,16 +159,71 @@ def student_dashboard(request):
 
 
 @login_required
+@user_passes_test(role_check('student'), login_url='login')
+def student_subject_attendance(request, subject_id):
+    """View showing a student's attendance detail for a specific subject"""
+    user = request.user
+    student = user.student_profile
+    subject = get_object_or_404(Subject, id=subject_id)
+    
+    # Get all class sessions for this subject, ordered by date
+    sessions = list(ClassSchedule.objects.filter(
+        subject=subject
+    ).select_related('taught_by').order_by('-session_date', '-start_time'))
+    
+    # Get attendance records for this student + subject
+    attendance_map = {}
+    for att in Attendance.objects.filter(student=student, session__subject=subject):
+        attendance_map[str(att.session_id)] = att.status
+    
+    # Attach status to each session
+    for session in sessions:
+        session.student_status = attendance_map.get(str(session.id), 'absent')
+    
+    # Stats
+    total_classes = len(sessions)
+    present_count = sum(1 for s in sessions if s.student_status == 'present')
+    absent_count = total_classes - present_count
+    attendance_pct = round((present_count / total_classes) * 100, 1) if total_classes > 0 else 0
+    
+    context = {
+        'subject': subject,
+        'sessions': sessions,
+        'total_classes': total_classes,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'attendance_pct': attendance_pct,
+        'page_title': f'Attendance: {subject.subject_name}'
+    }
+    return render(request, 'students/subject_attendance.html', context)
+
+
+@login_required
 @user_passes_test(role_check('teacher'), login_url='login')
 def teacher_dashboard(request):
     """Teacher dashboard view"""
     try:
         user = request.user
         
-        # Get subjects taught by this teacher
+        # Get subjects taught by this teacher with related course and semester
         subjects_taught = Subject.objects.filter(
             teacher_assignments__teacher=user
+        ).select_related('course', 'semester').order_by(
+            'course__course_name', 'semester__semester_no', 'subject_name'
         ).distinct()
+        
+        # Pre-group subjects by course -> semester for the template
+        from collections import OrderedDict
+        grouped_subjects = OrderedDict()
+        for subject in subjects_taught:
+            course_name = subject.course.course_name if subject.course else 'No Course'
+            semester_no = subject.semester.semester_no if subject.semester else 0
+            
+            if course_name not in grouped_subjects:
+                grouped_subjects[course_name] = OrderedDict()
+            if semester_no not in grouped_subjects[course_name]:
+                grouped_subjects[course_name][semester_no] = []
+            grouped_subjects[course_name][semester_no].append(subject)
         
         # Get recent and upcoming classes (last 3 days + future)
         three_days_ago = timezone.now().date() - timezone.timedelta(days=3)
@@ -132,6 +235,7 @@ def teacher_dashboard(request):
         context = {
             'user': user,
             'subjects_taught': subjects_taught,
+            'grouped_subjects': grouped_subjects,
             'upcoming_classes': recent_and_upcoming,
             'page_title': 'Teacher Dashboard'
         }
@@ -144,7 +248,7 @@ def teacher_dashboard(request):
 @login_required
 @user_passes_test(role_check('admin'), login_url='login')
 def admin_dashboard(request):
-    """Admin dashboard view"""
+    """Admin dashboard view with statistics and class schedule"""
     try:
         user = request.user
         
@@ -154,18 +258,121 @@ def admin_dashboard(request):
         total_teachers = User.objects.filter(role='teacher').count()
         total_courses = Course.objects.count()
         
-        # Recent attendance records
-        recent_attendance = Attendance.objects.all().select_related(
-            'student__user', 'session__subject', 'session__taught_by'
-        ).order_by('-marked_at')[:10]
+        # Chart JS Data Aggregation with Filters
+        import json
+        from django.shortcuts import get_object_or_404
         
+        course_chart_id = request.GET.get('course_chart')
+        semester_chart_id = request.GET.get('semester_chart')
+        subject_chart_id = request.GET.get('subject_chart')
+        
+        chart_labels = []
+        attendance_data = []
+        chart_title = "Overall Attendance by Semester"
+        chart_type = 'bar'
+        
+        if subject_chart_id:
+            subject = get_object_or_404(Subject, id=subject_chart_id)
+            chart_title = f"Attendance for {subject.subject_name}"
+            chart_type = 'doughnut'
+            total_present = Attendance.objects.filter(session__subject=subject, status='present').count()
+            total_absent = Attendance.objects.filter(session__subject=subject, status='absent').count()
+            total_late = Attendance.objects.filter(session__subject=subject, status='late').count()
+            chart_labels = ['Present', 'Absent', 'Late']
+            attendance_data = [total_present, total_absent, total_late]
+            
+        elif semester_chart_id:
+            semester = get_object_or_404(Semester, id=semester_chart_id)
+            chart_title = f"Attendance by Subject ({semester.course.course_name} - Sem {semester.semester_no})"
+            subjects = Subject.objects.filter(semester=semester)
+            for sub in subjects:
+                chart_labels.append(sub.subject_name)
+                total_records = Attendance.objects.filter(session__subject=sub).count()
+                present_records = Attendance.objects.filter(session__subject=sub, status='present').count()
+                pct = round((present_records / total_records) * 100, 1) if total_records > 0 else 0
+                attendance_data.append(pct)
+                
+        elif course_chart_id:
+            course = get_object_or_404(Course, id=course_chart_id)
+            chart_title = f"Attendance by Semester ({course.course_name})"
+            semesters = Semester.objects.filter(course=course).order_by('semester_no')
+            for sem in semesters:
+                chart_labels.append(f"Sem {sem.semester_no}")
+                total_records = Attendance.objects.filter(session__subject__semester=sem).count()
+                present_records = Attendance.objects.filter(session__subject__semester=sem, status='present').count()
+                pct = round((present_records / total_records) * 100, 1) if total_records > 0 else 0
+                attendance_data.append(pct)
+                
+        else:
+            semesters = Semester.objects.all().select_related('course')
+            for sem in semesters:
+                label_str = f"{sem.course.course_name[:15]} - Sem {sem.semester_no}"
+                chart_labels.append(label_str)
+                total_records = Attendance.objects.filter(session__subject__semester=sem).count()
+                present_records = Attendance.objects.filter(session__subject__semester=sem, status='present').count()
+                pct = round((present_records / total_records) * 100, 1) if total_records > 0 else 0
+                attendance_data.append(pct)
+
+        # For the dropdown filters
+        filter_courses = Course.objects.all()
+        filter_semesters = Semester.objects.all()
+        if course_chart_id:
+            filter_semesters = filter_semesters.filter(course_id=course_chart_id)
+        filter_subjects = Subject.objects.all()
+        if semester_chart_id:
+            filter_subjects = filter_subjects.filter(semester_id=semester_chart_id)
+        elif course_chart_id:
+            filter_subjects = filter_subjects.filter(course_id=course_chart_id)
+
+        # Remove recent_attendance context and add chart data
+        recent_attendance = None
+
+        # Class Schedule Logic
+        today = timezone.now().date()
+        selected_date_str = request.GET.get('date')
+        if selected_date_str:
+            try:
+                selected_date = timezone.datetime.strptime(selected_date_str, '%Y-%m-%d').date()
+            except ValueError:
+                selected_date = today
+        else:
+            selected_date = today
+
+        yesterday = today - timezone.timedelta(days=1)
+        tomorrow = today + timezone.timedelta(days=1)
+
+        # Fetch classes for specific dates
+        classes_today = ClassSchedule.objects.filter(session_date=today).select_related('subject', 'taught_by')
+        classes_yesterday = ClassSchedule.objects.filter(session_date=yesterday).select_related('subject', 'taught_by')
+        classes_tomorrow = ClassSchedule.objects.filter(session_date=tomorrow).select_related('subject', 'taught_by')
+        
+        # Classes for selected date (if not one of the quick dates)
+        classes_selected = None
+        if selected_date not in [today, yesterday, tomorrow]:
+            classes_selected = ClassSchedule.objects.filter(session_date=selected_date).select_related('subject', 'taught_by')
+
         context = {
             'user': user,
             'total_users': total_users,
             'total_students': total_students,
             'total_teachers': total_teachers,
             'total_courses': total_courses,
-            'recent_attendance': recent_attendance,
+            'semester_labels_json': json.dumps(chart_labels),
+            'attendance_data_json': json.dumps(attendance_data),
+            'chart_height': max(350, len(chart_labels) * 40),
+            'chart_title': chart_title,
+            'chart_type': chart_type,
+            'filter_courses': filter_courses,
+            'filter_semesters': filter_semesters,
+            'filter_subjects': filter_subjects,
+            'classes_today': classes_today,
+            'classes_yesterday': classes_yesterday,
+            'classes_tomorrow': classes_tomorrow,
+            'classes_selected': classes_selected,
+            'selected_date': selected_date,
+            'today': today,
+            'yesterday': yesterday,
+            'tomorrow': tomorrow,
             'page_title': 'Admin Dashboard'
         }
         return render(request, 'admin/dashboard.html', context)
@@ -253,6 +460,56 @@ def user_delete(request, user_id):
 
 @login_required
 @user_passes_test(role_check('admin'), login_url='login')
+def student_edit(request, user_id):
+    """View to edit a student's course, semester, and enrollment year"""
+    user_obj = get_object_or_404(User, id=user_id, role='student')
+    student = get_object_or_404(Student, user=user_obj)
+    
+    if request.method == 'POST':
+        course_id = request.POST.get('course')
+        current_semester = request.POST.get('current_semester')
+        enrollment_year = request.POST.get('enrollment_year')
+        firstname = request.POST.get('firstname')
+        lastname = request.POST.get('lastname')
+        
+        if course_id and current_semester and enrollment_year:
+            try:
+                course = get_object_or_404(Course, id=course_id)
+                student.course = course
+                student.current_semester = int(current_semester)
+                student.enrollment_year = int(enrollment_year)
+                student.updated_by = request.user
+                student.save()
+                
+                if firstname:
+                    user_obj.firstname = firstname
+                if lastname:
+                    user_obj.lastname = lastname
+                user_obj.save()
+                
+                messages.success(request, f'Student {user_obj.firstname} {user_obj.lastname} updated successfully.')
+                return redirect('user_list')
+            except Exception as e:
+                messages.error(request, f'Error updating student: {str(e)}')
+        else:
+            messages.error(request, 'Course, semester, and enrollment year are required.')
+    
+    courses = Course.objects.all()
+    # Get semesters for current course
+    semesters = Semester.objects.filter(course=student.course).order_by('semester_no') if student.course else []
+    
+    context = {
+        'user_obj': user_obj,
+        'student': student,
+        'courses': courses,
+        'semesters': semesters,
+        'page_title': f'Edit Student: {user_obj.firstname} {user_obj.lastname}'
+    }
+    return render(request, 'admin/student_edit.html', context)
+
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
 def course_list(request):
     """View to list all courses"""
     courses = Course.objects.all().prefetch_related('semesters')
@@ -270,9 +527,9 @@ def course_create(request):
     if request.method == 'POST':
         name = request.POST.get('course_name')
         if name:
-            Course.objects.create(course_name=name)
+            course = Course.objects.create(course_name=name)
             messages.success(request, f'Course {name} created successfully.')
-            return redirect('course_list')
+            return redirect('course_semesters', course_id=course.id)
         messages.error(request, 'Course name is required.')
     
     return render(request, 'admin/course_form.html', {'page_title': 'Create Course'})
@@ -302,13 +559,57 @@ def course_edit(request, course_id):
 
 @login_required
 @user_passes_test(role_check('admin'), login_url='login')
+def course_semesters(request, course_id):
+    """View to list all semesters for a specific course"""
+    course = get_object_or_404(Course, id=course_id)
+    semesters = Semester.objects.filter(course=course).prefetch_related('subjects')
+    
+    context = {
+        'course': course,
+        'semesters': semesters,
+        'page_title': f'Semesters for {course.course_name}'
+    }
+    return render(request, 'admin/semester_list.html', context)
+
+
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+@login_required
+@user_passes_test(role_check('admin'), login_url='login')
+def semester_create(request, course_id):
+    """View to create a new semester for a course"""
+    course = get_object_or_404(Course, id=course_id)
+    if request.method == 'POST':
+        semester_no = request.POST.get('semester_no')
+        if semester_no and semester_no.isdigit():
+            sem, created = Semester.objects.get_or_create(
+                course=course,
+                semester_no=int(semester_no)
+            )
+            if created:
+                messages.success(request, f'Semester {semester_no} added to {course.course_name}.')
+            else:
+                messages.warning(request, f'Semester {semester_no} already exists for this course.')
+            return redirect('course_semesters', course_id=course.id)
+        messages.error(request, 'A valid semester number is required.')
+    
+    return render(request, 'admin/semester_form.html', {
+        'page_title': f'Add Semester to {course.course_name}',
+        'course': course
+    })
+
+
 def subject_list(request):
     """View to list all subjects"""
     course_filter = request.GET.get('course')
-    subjects = Subject.objects.all().select_related('course')
+    semester_filter = request.GET.get('semester')
+    
+    subjects = Subject.objects.all().select_related('course', 'semester')
     
     if course_filter:
         subjects = subjects.filter(course_id=course_filter)
+    if semester_filter:
+        subjects = subjects.filter(semester_id=semester_filter)
         
     # Get teacher assignments for these subjects
     for subject in subjects:
@@ -316,10 +617,16 @@ def subject_list(request):
         subject.assigned_teachers = [a.teacher for a in assignments]
         
     courses = Course.objects.all()
+    selected_semester = None
+    if semester_filter:
+        selected_semester = Semester.objects.filter(id=semester_filter).first()
+        
     context = {
         'subjects': subjects,
         'courses': courses,
         'course_filter': course_filter,
+        'semester_filter': semester_filter,
+        'selected_semester': selected_semester,
         'page_title': 'Subject Management'
     }
     return render(request, 'admin/subject_list.html', context)
@@ -333,15 +640,18 @@ def subject_create(request):
         code = request.POST.get('subject_code')
         name = request.POST.get('subject_name')
         course_id = request.POST.get('course')
+        semester_id = request.POST.get('semester')
         teacher_id = request.POST.get('teacher')
         
-        if code and name and course_id:
+        if code and name and course_id and semester_id:
             try:
                 course = get_object_or_404(Course, id=course_id)
+                semester = get_object_or_404(Semester, id=semester_id, course=course)
                 subject = Subject.objects.create(
                     subject_code=code,
                     subject_name=name,
-                    course=course
+                    course=course,
+                    semester=semester
                 )
                 
                 if teacher_id:
@@ -353,14 +663,23 @@ def subject_create(request):
             except Exception as e:
                 messages.error(request, f'Error creating subject: {str(e)}')
         else:
-            messages.error(request, 'Subject code, name, and course are required.')
+            messages.error(request, 'Subject code, name, course, and semester are required.')
             
+    # Pre-select semester if passed in GET
+    initial_semester_id = request.GET.get('semester')
+    initial_semester = None
+    if initial_semester_id:
+        initial_semester = Semester.objects.filter(id=initial_semester_id).first()
+
     courses = Course.objects.all()
+    semesters = Semester.objects.all()
     teachers = User.objects.filter(role='teacher')
     return render(request, 'admin/subject_form.html', {
         'page_title': 'Create Subject',
         'courses': courses,
-        'teachers': teachers
+        'semesters': semesters,
+        'teachers': teachers,
+        'initial_semester': initial_semester
     })
 
 
@@ -374,14 +693,17 @@ def subject_edit(request, subject_id):
         code = request.POST.get('subject_code')
         name = request.POST.get('subject_name')
         course_id = request.POST.get('course')
+        semester_id = request.POST.get('semester')
         teacher_id = request.POST.get('teacher')
         
-        if code and name and course_id:
+        if code and name and course_id and semester_id:
             try:
                 course = get_object_or_404(Course, id=course_id)
+                semester = get_object_or_404(Semester, id=semester_id, course=course)
                 subject.subject_code = code
                 subject.subject_name = name
                 subject.course = course
+                subject.semester = semester
                 subject.save()
                 
                 # Handle teacher assignment
@@ -395,9 +717,10 @@ def subject_edit(request, subject_id):
             except Exception as e:
                 messages.error(request, f'Error updating subject: {str(e)}')
         else:
-            messages.error(request, 'Subject code, name, and course are required.')
+            messages.error(request, 'Subject code, name, course, and semester are required.')
             
     courses = Course.objects.all()
+    semesters = Semester.objects.all()
     teachers = User.objects.filter(role='teacher')
     
     # Get current teacher assignment
@@ -408,6 +731,7 @@ def subject_edit(request, subject_id):
         'page_title': 'Edit Subject',
         'subject': subject,
         'courses': courses,
+        'semesters': semesters,
         'teachers': teachers,
         'assigned_teacher_id': assigned_teacher_id
     })
@@ -415,12 +739,37 @@ def subject_edit(request, subject_id):
 @user_passes_test(role_check('admin'), login_url='login')
 def attendance_history(request):
     """View for full attendance history"""
+    subject_filter = request.GET.get('subject')
     attendance_records = Attendance.objects.all().select_related(
         'student__user', 'session__subject', 'session__taught_by'
-    ).order_by('-marked_at')
+    )
+    
+    selected_subject = None
+    if subject_filter:
+        attendance_records = attendance_records.filter(session__subject_id=subject_filter)
+        selected_subject = Subject.objects.filter(id=subject_filter).first()
+        
+    attendance_records = attendance_records.order_by('-marked_at')
+    
+    page_title = 'Attendance History'
+    if selected_subject:
+        page_title = f'Attendance History: {selected_subject.subject_name}'
     
     context = {
         'attendance_records': attendance_records,
-        'page_title': 'Attendance History'
+        'subject_filter': subject_filter,
+        'selected_subject': selected_subject,
+        'page_title': page_title
     }
     return render(request, 'admin/attendance_history.html', context)
+
+
+@login_required
+def semesters_api(request):
+    """Simple JSON API to return semesters for a given course"""
+    course_id = request.GET.get('course')
+    if not course_id:
+        return JsonResponse([], safe=False)
+    semesters = Semester.objects.filter(course_id=course_id).order_by('semester_no')
+    data = [{'id': str(s.id), 'semester_no': s.semester_no} for s in semesters]
+    return JsonResponse(data, safe=False)

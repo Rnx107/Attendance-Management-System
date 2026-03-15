@@ -114,6 +114,7 @@ class Subject(models.Model):
     """Subject model linked to a Course"""
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='subjects', null=True)
+    semester = models.ForeignKey(Semester, on_delete=models.CASCADE, related_name='subjects', null=True)
     subject_code = models.CharField(max_length=50, unique=True)
     subject_name = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)

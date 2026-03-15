@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% block title %}{{ page_title }} - AMS{% endblock %}
+{% block content %}
+
+<!-- Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1"><i class="bi bi-journal-bookmark me-2"></i>{{ subject.subject_name }}</h2>
+        <p class="text-muted mb-0">
+            <span class="badge bg-info-subtle text-info border me-2">{{ subject.subject_code }}</span>
+            {{ subject.course.course_name }} · Semester {{ subject.semester.semester_no }}
+        </p>
+    </div>
+    <a href="{% url 'student_dashboard' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to Dashboard
+    </a>
+</div>
+
+<!-- Summary Stats -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 text-center py-3">
+            <div class="small text-muted fw-semibold">Total Classes</div>
+            <div class="fs-3 fw-bold text-dark">{{ total_classes }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 text-center py-3">
+            <div class="small text-muted fw-semibold">Present</div>
+            <div class="fs-3 fw-bold text-success">{{ present_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 text-center py-3">
+            <div class="small text-muted fw-semibold">Absent</div>
+            <div class="fs-3 fw-bold text-danger">{{ absent_count }}</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm rounded-3 text-center py-3">
+            <div class="small text-muted fw-semibold">Percentage</div>
+            <div class="fs-3 fw-bold {% if attendance_pct >= 75 %}text-success{% elif attendance_pct >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                {{ attendance_pct }}%
+            </div>
+            <div class="progress mx-4 mt-1" style="height: 6px;">
+                <div class="progress-bar {% if attendance_pct >= 75 %}bg-success{% elif attendance_pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                     style="width: {{ attendance_pct }}%"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Class-by-Class Attendance -->
+<div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+    <div class="card-header bg-white py-3 border-0">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-list-check me-2"></i>Class-by-Class Attendance</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-muted small text-uppercase">
+                    <tr>
+                        <th class="px-4 py-3">#</th>
+                        <th class="py-3">Date</th>
+                        <th class="py-3">Time</th>
+                        <th class="py-3">Teacher</th>
+                        <th class="py-3 text-center">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td class="px-4 py-3 text-muted">{{ forloop.revcounter }}</td>
+                        <td class="py-3">{{ session.session_date }}</td>
+                        <td class="py-3">{{ session.start_time }} – {{ session.end_time }}</td>
+                        <td class="py-3">{{ session.taught_by.firstname }} {{ session.taught_by.lastname }}</td>
+                        <td class="py-3 text-center">
+                            {% if session.student_status == 'present' %}
+                            <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2 border">
+                                <i class="bi bi-check-circle-fill me-1"></i>Present
+                            </span>
+                            {% else %}
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2 border">
+                                <i class="bi bi-x-circle-fill me-1"></i>Absent
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-muted py-5">
+                            <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
+                            No classes have been held for this subject yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

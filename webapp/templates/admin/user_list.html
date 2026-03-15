@@ -35,6 +35,11 @@
                         </td>
                         <td class="py-3 text-muted small">{{ user_obj.date_joined|date:"M d, Y" }}</td>
                         <td class="px-4 py-3 text-end">
+                            {% if user_obj.role == 'student' %}
+                            <a href="{% url 'student_edit' user_obj.id %}" class="btn btn-sm btn-outline-primary me-1">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            {% endif %}
                             <form action="{% url 'user_delete' user_obj.id %}" method="get" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-outline-danger">
                                     <i class="bi bi-trash"></i>

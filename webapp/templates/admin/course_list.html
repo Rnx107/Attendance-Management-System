@@ -22,19 +22,14 @@
                 </div>
                 <p class="text-muted small mb-3">Created on {{ course.created_at|date:"M d, Y" }}</p>
 
-                <h6 class="fw-bold mb-2">Subjects:</h6>
+                <h6 class="fw-bold mb-2">Semesters:</h6>
                 <div class="d-flex flex-wrap gap-2">
-                    {% for subject in course.subjects.all %}
-                    <span class="badge bg-light text-dark border">{{ subject.subject_code }} – {{ subject.subject_name
-                        }}</span>
-                    {% empty %}
-                    <span class="text-muted small">No subjects added.</span>
-                    {% endfor %}
+                    <span class="badge bg-light text-dark border">{{ course.semesters.count }} Semesters Total</span>
                 </div>
             </div>
             <div class="card-footer bg-white border-0 text-end pb-3">
-                <a href="{% url 'subject_create' %}?course={{ course.id }}" class="btn btn-sm btn-outline-success me-2">
-                    <i class="bi bi-plus me-1"></i>Add Subject
+                <a href="{% url 'course_semesters' course.id %}" class="btn btn-sm btn-info me-2 text-white">
+                    <i class="bi bi-layers me-1"></i>View Semesters
                 </a>
                 <a href="{% url 'course_edit' course.id %}" class="btn btn-sm btn-outline-primary">Edit Course</a>
             </div>

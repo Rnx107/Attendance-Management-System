@@ -18,14 +18,24 @@
                 <select name="course" class="form-select" onchange="this.form.submit()">
                     <option value="">All Courses</option>
                     {% for course in courses %}
-                    <option value="{{ course.id }}" {% if course_filter==course.id|stringformat:"s" %}selected{% endif
-                        %}>
+                    <option value="{{ course.id }}" {% if course_filter == course.id|stringformat:"s" %}selected{% endif %}>
                         {{ course.course_name }}
                     </option>
                     {% endfor %}
                 </select>
             </div>
-            {% if course_filter %}
+            
+            {% if selected_semester %}
+            <div class="col-auto">
+                <span class="badge bg-primary fs-6 p-2">
+                    <i class="bi bi-layers me-1"></i> Semester {{ selected_semester.semester_no }}
+                    <a href="{% url 'subject_list' %}{% if course_filter %}?course={{ course_filter }}{% endif %}" class="text-white ms-2 text-decoration-none"><i class="bi bi-x-circle-fill"></i></a>
+                </span>
+                <input type="hidden" name="semester" value="{{ selected_semester.id }}">
+            </div>
+            {% endif %}
+            
+            {% if course_filter or semester_filter %}
             <div class="col-auto">
                 <a href="{% url 'subject_list' %}" class="btn btn-outline-secondary btn-sm">Clear Filter</a>
             </div>
@@ -62,11 +72,17 @@
                 </div>
             </div>
             <div class="card-footer bg-white border-0 text-end pb-3">
-                <a href="{% url 'teacher_view_students' subject.id %}" class="btn btn-sm btn-outline-info me-1">
-                    <i class="bi bi-people me-1"></i>View Students
+                <a href="{% url 'teacher_view_students' subject.id %}" class="btn btn-sm btn-info text-white me-1 mb-1">
+                    <i class="bi bi-grid-3x3 me-1"></i>Attendance
                 </a>
-                <a href="{% url 'subject_edit' subject.id %}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-pencil me-1"></i>Edit Subject
+                <a href="{% url 'teacher_view_students' subject.id %}" class="btn btn-sm btn-outline-success me-1 mb-1">
+                    <i class="bi bi-people me-1"></i>Students
+                </a>
+                <a href="{% url 'export_subject_attendance_excel' subject.id %}" class="btn btn-sm btn-outline-secondary me-1 mb-1" title="Export to Excel">
+                    <i class="bi bi-file-earmark-excel me-1"></i>Export
+                </a>
+                <a href="{% url 'subject_edit' subject.id %}" class="btn btn-sm btn-outline-primary mb-1">
+                    <i class="bi bi-pencil me-1"></i>Edit
                 </a>
             </div>
         </div>

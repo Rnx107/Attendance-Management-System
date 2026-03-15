@@ -24,7 +24,7 @@
                             <input type="text" name="subject_code" class="form-control" placeholder="e.g. CS101"
                                 value="{{ subject.subject_code|default:'' }}" required>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label class="form-label fw-semibold">Course</label>
                             <select name="course" class="form-select" required>
                                 <option value="">-- Select Course --</option>
@@ -39,7 +39,49 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Semester</label>
+                            <select name="semester" class="form-select" required>
+                                <option value="">-- Select Semester --</option>
+                                {% for sem in semesters %}
+                                <option value="{{ sem.id }}" data-course="{{ sem.course_id }}"
+                                    {% if subject and subject.semester_id == sem.id %}selected{% endif %}
+                                    {% if initial_semester and initial_semester.id == sem.id %}selected{% endif %}>
+                                    Semester {{ sem.semester_no }} ({{ sem.course.course_name|truncatechars:15 }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
                     </div>
+
+                    <script>
+                        // Simple script to filter semesters by selected course
+                        document.addEventListener("DOMContentLoaded", function () {
+                            const courseSelect = document.querySelector('select[name="course"]');
+                            const semesterSelect = document.querySelector('select[name="semester"]');
+                            const allSemOptions = Array.from(semesterSelect.options).slice(1); // skip default
+                            
+                            function filterSemesters() {
+                                const courseId = courseSelect.value;
+                                allSemOptions.forEach(opt => opt.style.display = 'none');
+                                if (courseId) {
+                                    allSemOptions.forEach(opt => {
+                                        if (opt.getAttribute('data-course') === courseId) {
+                                            opt.style.display = '';
+                                        }
+                                    });
+                                }
+                                // If current selected semester is now hidden, reset
+                                if (semesterSelect.selectedIndex > 0 && 
+                                    semesterSelect.options[semesterSelect.selectedIndex].style.display === 'none') {
+                                    semesterSelect.selectedIndex = 0;
+                                }
+                            }
+                            
+                            courseSelect.addEventListener('change', filterSemesters);
+                            filterSemesters(); // run on load
+                        });
+                    </script>
 
                     <hr class="text-muted opacity-50 mb-4">
 
@@ -51,13 +93,11 @@
                             {% for teacher in teachers %}
                             {% if assigned_teacher_id == teacher.id %}
                             <option value="{{ teacher.id }}" selected>
-                                {{ teacher.firstname }} {{ teacher.middlename|default:'' }} {{ teacher.lastname }} ({{
-                                teacher.email }})
+                                {{ teacher.firstname }} {{ teacher.middlename|default:'' }} {{ teacher.lastname }} ({{ teacher.email }})
                             </option>
                             {% else %}
                             <option value="{{ teacher.id }}">
-                                {{ teacher.firstname }} {{ teacher.middlename|default:'' }} {{ teacher.lastname }} ({{
-                                teacher.email }})
+                                {{ teacher.firstname }} {{ teacher.middlename|default:'' }} {{ teacher.lastname }} ({{ teacher.email }})
                             </option>
                             {% endif %}
                             {% endfor %}

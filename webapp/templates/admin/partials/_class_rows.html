@@ -1,0 +1,26 @@
+{% for class in current_classes %}
+<tr>
+    <td class="px-4 py-3">
+        <div class="fw-bold">{{ class.start_time|time:"H:i" }} - {{ class.end_time|time:"H:i" }}</div>
+    </td>
+    <td class="py-3">
+        <div class="fw-semibold">{{ class.subject.subject_name }}</div>
+        <div class="text-muted small">{{ class.subject.subject_code }}</div>
+    </td>
+    <td class="py-3">
+        {{ class.taught_by.firstname }} {{ class.taught_by.lastname }}
+    </td>
+    <td class="py-3">
+        {{ class.subject.course.course_name }}
+    </td>
+    <td class="py-3 text-center">
+        <a href="{% url 'admin_session_attendance' class.id %}" class="btn btn-sm btn-outline-primary">
+            View Attendance
+        </a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="5" class="text-center text-muted py-5">No classes found for this date.</td>
+</tr>
+{% endfor %}

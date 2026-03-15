@@ -8,61 +8,114 @@
     </div>
 </div>
 
+<!-- Info Cards Row -->
 <div class="row mb-4">
-    <div class="col-md-4">
-        <div class="card text-white bg-primary mb-3 shadow-sm border-0">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3 shadow-sm border-0 rounded-3">
             <div class="card-body">
-                <h5 class="card-title mb-3 fw-bold"><i class="bi bi-mortarboard-fill me-2"></i>Enrollment</h5>
-                <p class="card-text mb-1"><strong>Course:</strong> {{ student.course.course_name }}</p>
-                <p class="card-text mb-1"><strong>Semester:</strong> {{ student.current_semester }}</p>
-                <p class="card-text mb-1"><strong>Year:</strong> {{ student.enrollment_year }}</p>
-                <p class="card-text small mt-3 opacity-75">Student ID: {{ student.id|stringformat:".8s" }}...</p>
+                <h6 class="card-title mb-2 fw-bold opacity-75"><i class="bi bi-mortarboard-fill me-1"></i>Enrollment</h6>
+                <p class="card-text mb-1 small"><strong>Course:</strong> {{ student.course.course_name }}</p>
+                <p class="card-text mb-1 small"><strong>Semester:</strong> {{ student.current_semester }}</p>
+                <p class="card-text mb-0 small"><strong>Year:</strong> {{ student.enrollment_year }}</p>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        <div class="card text-white bg-success mb-3">
-            <div class="card-body">
-                <h5 class="card-title"><i class="bi bi-check-circle-fill me-2"></i>Attendance</h5>
-                <p class="card-text">Total Records: {{ attendance_records|length }}</p>
-                <p class="card-text small">Latest Status: {% if attendance_records %}{{ attendance_records.0.status|title }}{% else %}N/A{% endif %}</p>
+    <div class="col-md-3">
+        <div class="card mb-3 shadow-sm border-0 rounded-3 {% if overall_pct >= 75 %}bg-success{% elif overall_pct >= 50 %}bg-warning{% else %}bg-danger{% endif %} text-white">
+            <div class="card-body text-center">
+                <h6 class="card-title mb-1 fw-bold opacity-75"><i class="bi bi-pie-chart-fill me-1"></i>Overall Attendance</h6>
+                <div class="fs-1 fw-bold">{{ overall_pct }}%</div>
+                <p class="card-text small mb-0 opacity-75">{{ total_present_all }} / {{ total_classes_all }} classes</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card mb-3 shadow-sm border-0 rounded-3 {% if subjects_at_risk > 0 %}bg-danger{% else %}bg-success{% endif %} text-white">
+            <div class="card-body text-center">
+                <h6 class="card-title mb-1 fw-bold opacity-75"><i class="bi bi-exclamation-triangle-fill me-1"></i>At Risk</h6>
+                <div class="fs-1 fw-bold">{{ subjects_at_risk }}</div>
+                <p class="card-text small mb-0 opacity-75">
+                    {% if subjects_at_risk > 0 %}subject{{ subjects_at_risk|pluralize }} below 75%{% else %}All good! Above 75%{% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3 shadow-sm border-0 rounded-3">
+            <div class="card-body text-center">
+                <h6 class="card-title mb-1 fw-bold opacity-75"><i class="bi bi-book me-1"></i>Subjects</h6>
+                <div class="fs-1 fw-bold">{{ semester_subjects|length }}</div>
+                <p class="card-text small mb-0 opacity-75">Semester {{ student.current_semester }}</p>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Current Semester Subjects -->
 <div class="row mb-4">
     <div class="col-md-12">
-        <div class="card shadow-sm border-0">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-bold text-primary"><i class="bi bi-calendar-check me-2"></i>Today's Classes & Attendance</h5>
+        <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="mb-0 fw-bold text-primary">
+                    <i class="bi bi-journal-text me-2"></i>
+                    My Subjects — {{ student.course.course_name }} · Semester {{ student.current_semester }}
+                </h5>
             </div>
             <div class="card-body">
                 <div class="row">
-                    {% for cls in available_classes %}
-                    <div class="col-md-4 mb-3">
-                        <div class="card h-100 bg-light border-0 shadow-sm">
+                    {% for subject in semester_subjects %}
+                    <div class="col-md-4 col-lg-3 mb-3">
+                        <a href="{% url 'student_subject_attendance' subject.id %}" class="text-decoration-none">
+                        <div class="card h-100 border-0 shadow-sm rounded-3" style="cursor:pointer; transition: transform 0.15s;" onmouseover="this.style.transform='translateY(-4px)'" onmouseout="this.style.transform=''">
                             <div class="card-body">
-                                <h6 class="card-title fw-bold">{{ cls.subject.subject_name }}</h6>
-                                <p class="card-text small mb-1"><i class="bi bi-clock me-1"></i>{{ cls.start_time }} - {{ cls.end_time }}</p>
-                                <p class="card-text small mb-3"><i class="bi bi-person me-1"></i>{{ cls.taught_by.firstname }} {{ cls.taught_by.lastname }}</p>
+                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                    <h6 class="card-title fw-bold text-dark mb-0">{{ subject.subject_name }}</h6>
+                                </div>
+                                <span class="badge bg-info-subtle text-info border mb-3">{{ subject.subject_code }}</span>
                                 
-                                {% if cls.already_marked %}
-                                <button class="btn btn-sm btn-secondary w-100" disabled>
-                                    <i class="bi bi-check-circle-fill me-1"></i>Already Marked
-                                </button>
-                                {% else %}
-                                <a href="{% url 'student_mark_attendance' cls.id %}" class="btn btn-sm btn-primary w-100">
-                                    <i class="bi bi-plus-circle me-1"></i>Mark Attendance
-                                </a>
-                                {% endif %}
+                                <!-- Attendance Progress -->
+                                <div class="mb-2">
+                                    <div class="d-flex justify-content-between small mb-1">
+                                        <span class="fw-semibold text-muted">Attendance</span>
+                                        <span class="fw-bold {% if subject.attendance_pct >= 75 %}text-success{% elif subject.attendance_pct >= 50 %}text-warning{% else %}text-danger{% endif %}">
+                                            {{ subject.attendance_pct }}%
+                                        </span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar {% if subject.attendance_pct >= 75 %}bg-success{% elif subject.attendance_pct >= 50 %}bg-warning{% else %}bg-danger{% endif %}" 
+                                             role="progressbar" 
+                                             style="width: {{ subject.attendance_pct }}%">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Stats Row -->
+                                <div class="row text-center mt-3 g-1">
+                                    <div class="col-4">
+                                        <div class="small text-muted">Classes</div>
+                                        <div class="fw-bold text-dark">{{ subject.total_classes }}</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="small text-muted">Present</div>
+                                        <div class="fw-bold text-success">{{ subject.present_count }}</div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="small text-muted">Absent</div>
+                                        <div class="fw-bold text-danger">{{ subject.absent_count }}</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="text-center mt-3">
+                                    <small class="text-primary fw-semibold">View Details <i class="bi bi-arrow-right"></i></small>
+                                </div>
                             </div>
                         </div>
+                        </a>
                     </div>
                     {% empty %}
                     <div class="col-12 text-center py-4 text-muted">
-                        <i class="bi bi-calendar-x fs-1 d-block mb-2"></i>
-                        No classes scheduled for today.
+                        <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+                        No subjects found for your current semester.
                     </div>
                     {% endfor %}
                 </div>
@@ -71,51 +124,4 @@
     </div>
 </div>
 
-<div class="row">
-    <div class="col-md-12">
-        <div class="card shadow-sm">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Recent Attendance Records</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Date</th>
-                                <th>Subject</th>
-                                <th>Teacher</th>
-                                <th>Status</th>
-                                <th>Verification</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for record in attendance_records %}
-                            <tr>
-                                <td>{{ record.session.session_date }}</td>
-                                <td>{{ record.session.subject.subject_name }}</td>
-                                <td>{{ record.session.taught_by.firstname }} {{ record.session.taught_by.lastname }}</td>
-                                <td>
-                                    <span class="badge {% if record.status == 'present' %}bg-success{% elif record.status == 'absent' %}bg-danger{% else %}bg-warning{% endif %}">
-                                        {{ record.status|title }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge {% if record.verification_status == 'verified' %}bg-info{% elif record.verification_status == 'rejected' %}bg-danger{% else %}bg-secondary{% endif %} rounded-pill">
-                                        {{ record.verification_status|title }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-4">No attendance records found.</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
 {% endblock %}

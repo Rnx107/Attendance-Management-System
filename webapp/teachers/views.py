@@ -35,10 +35,20 @@ def teacher_view_students(request, subject_id):
             history.append(att.status if att else 'N/A')
         student.attendance_history = zip(recent_sessions, history)
     
+    # Calculate overall subject attendance stats for the chart
+    total_present = Attendance.objects.filter(student__in=students, session__subject=subject, status='present').count()
+    total_absent = Attendance.objects.filter(student__in=students, session__subject=subject, status='absent').count()
+    total_late = Attendance.objects.filter(student__in=students, session__subject=subject, status='late').count()
+    
+    # Pack into JSON format for the template
+    import json
+    chart_data = json.dumps([total_present, total_absent, total_late])
+
     context = {
         'subject': subject,
         'students': students,
         'recent_sessions': recent_sessions,
+        'chart_data_json': chart_data,
         'page_title': f'Students in {subject.subject_name}'
     }
     return render(request, 'teachers/student_list.html', context)

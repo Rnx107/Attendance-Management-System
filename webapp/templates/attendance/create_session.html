@@ -19,12 +19,37 @@
             <div class="card-body p-4">
                 <form method="POST">
                     {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="course" class="form-label fw-bold small">Filter by Course (Optional)</label>
+                            <select id="course" class="form-select">
+                                <option value="">All Courses</option>
+                                {% for course in courses %}
+                                <option value="{{ course.id }}">{{ course.course_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="semester" class="form-label fw-bold small">Filter by Semester (Optional)</label>
+                            <select id="semester" class="form-select">
+                                <option value="">All Semesters</option>
+                                {% for sem in semesters %}
+                                <option value="{{ sem.id }}" data-course="{{ sem.course_id }}">
+                                    Semester {{ sem.semester_no }} ({{ sem.course.course_name|truncatechars:15 }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
                     <div class="mb-3">
-                        <label for="subject" class="form-label fw-bold small">Subject</label>
+                        <label for="subject" class="form-label fw-bold small">Subject <span class="text-danger">*</span></label>
                         <select name="subject" id="subject" class="form-select" required>
                             <option value="">Select a subject...</option>
                             {% for subject in subjects %}
-                            <option value="{{ subject.id }}">{{ subject.subject_name }} ({{ subject.subject_code }})</option>
+                            <option value="{{ subject.id }}" data-course="{{ subject.course_id }}" data-semester="{{ subject.semester_id }}">
+                                {{ subject.subject_name }} ({{ subject.subject_code }})
+                            </option>
                             {% endfor %}
                         </select>
                     </div>
@@ -52,4 +77,48 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const courseSelect = document.getElementById('course');
+    const semesterSelect = document.getElementById('semester');
+    const subjectSelect = document.getElementById('subject');
+    
+    // Store original options (skipping the first "Select a subject..." placeholder)
+    const allSemOptions = Array.from(semesterSelect.options).slice(1);
+    const allSubjOptions = Array.from(subjectSelect.options).slice(1);
+    
+    function filterFields() {
+        const selectedCourse = courseSelect.value;
+        const selectedSemester = semesterSelect.value;
+        
+        // Filter Semesters
+        allSemOptions.forEach(opt => {
+            if (!selectedCourse || opt.getAttribute('data-course') === selectedCourse) {
+                opt.style.display = '';
+            } else {
+                opt.style.display = 'none';
+                if (opt.selected) semesterSelect.value = '';
+            }
+        });
+        
+        // Filter Subjects
+        allSubjOptions.forEach(opt => {
+            const matchCourse = !selectedCourse || opt.getAttribute('data-course') === selectedCourse;
+            const matchSemester = !selectedSemester || opt.getAttribute('data-semester') === selectedSemester;
+            
+            if (matchCourse && matchSemester) {
+                opt.style.display = '';
+            } else {
+                opt.style.display = 'none';
+                if (opt.selected) subjectSelect.value = ''; // clear invalid selection
+            }
+        });
+    }
+    
+    courseSelect.addEventListener('change', filterFields);
+    semesterSelect.addEventListener('change', filterFields);
+    filterFields(); // Initial run
+});
+</script>
 {% endblock %}

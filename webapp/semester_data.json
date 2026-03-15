@@ -1,0 +1,222 @@
+{
+    "semester1": [
+        {
+            "code": "EDUC100",
+            "name": "The Teaching Profession"
+        },
+        {
+            "code": "VPED100",
+            "name": "Principles and Methods of Technical Instruction"
+        },
+        {
+            "code": "ITEX100",
+            "name": "Information System"
+        },
+        {
+            "code": "ITEX101",
+            "name": "Software Development"
+        },
+        {
+            "code": "ITEX102",
+            "name": "Computer Programming Using C"
+        },
+        {
+            "code": "ITEX105",
+            "name": "Professional Issues in IS Practices"
+        },
+        {
+            "code": "ITEX110",
+            "name": "Mathematical Concepts for Computing"
+        }
+    ],
+    "semester2": [
+        {
+            "code": "ENGT100",
+            "name": "Communication Skills"
+        },
+        {
+            "code": "VPED101",
+            "name": "Instructional System Design"
+        },
+        {
+            "code": "ITEX103",
+            "name": "Object Oriented Programming"
+        },
+        {
+            "code": "ITEX104",
+            "name": "Database System"
+        },
+        {
+            "code": "ITEX111",
+            "name": "Digital Logic"
+        },
+        {
+            "code": "ITEX120",
+            "name": "Probability and Statistical Modelling"
+        },
+        {
+            "code": "ITEX121",
+            "name": "Computer Maintenance and Troubleshooting"
+        }
+    ],
+    "semester3": [
+        {
+            "code": "NEPL200",
+            "name": "General Nepali"
+        },
+        {
+            "code": "VPED220",
+            "name": "Instructional Skills II"
+        },
+        {
+            "code": "ITEX211",
+            "name": "E-learning Management System"
+        },
+        {
+            "code": "ITEX215",
+            "name": "Computer Graphics and Multimedia"
+        },
+        {
+            "code": "ITEX203",
+            "name": "System Analysis and Design"
+        },
+        {
+            "code": "ITEX216",
+            "name": "Research Methods for Computing and Technology"
+        },
+        {
+            "code": "ITEX220",
+            "name": "Operating System"
+        }
+    ],
+    "semester4": [
+        {
+            "code": "EDUC200",
+            "name": "Educational Psychology"
+        },
+        {
+            "code": "VPED210",
+            "name": "Instructional Skills I"
+        },
+        {
+            "code": "ITEX200",
+            "name": "Data Structure and Algorithm"
+        },
+        {
+            "code": "ITEX214",
+            "name": "IT Project Management"
+        },
+        {
+            "code": "ITEX201",
+            "name": "Computer Networks"
+        },
+        {
+            "code": "ITEX212",
+            "name": "Microprocessor and Computer Architecture"
+        },
+        {
+            "code": "ITEX213",
+            "name": "Principles of Internet Technologies and Web Applications"
+        }
+    ],
+    "semester5": [
+        {
+            "code": "EDUC300",
+            "name": "Curriculum Development"
+        },
+        {
+            "code": "VPED300",
+            "name": "Designing Occupational Curriculum"
+        },
+        {
+            "code": "VPED301",
+            "name": "TVET Ecosystem in Nepal"
+        },
+        {
+            "code": "ITEX300",
+            "name": "Management Information System"
+        },
+        {
+            "code": "ITEX320",
+            "name": "Web Engineering"
+        },
+        {
+            "code": "ITEX321",
+            "name": "Software Engineering"
+        },
+        {
+            "code": "ITEX301",
+            "name": "System Network Administration"
+        },
+        {
+            "code": "ITEX340",
+            "name": "Professional IT Project I"
+        }
+    ],
+    "semester6": [
+        {
+            "code": "EDUC301",
+            "name": "Measurement and Evaluation"
+        },
+        {
+            "code": "VPED302",
+            "name": "Training Methodology"
+        },
+        {
+            "code": "VPED303",
+            "name": "Assessment in TVET"
+        },
+        {
+            "code": "ITEX322",
+            "name": "Cloud Computing"
+        },
+        {
+            "code": "ITEX323",
+            "name": "Internet of Things (IoT), Concepts and Applications"
+        },
+        {
+            "code": "ITEX324",
+            "name": "Artificial Intelligence"
+        },
+        {
+            "code": "ITEX325",
+            "name": "Entrepreneurship"
+        },
+        {
+            "code": "ITEX326",
+            "name": "IT and the Environment"
+        }
+    ],
+    "semester7": [
+        {
+            "code": "EDUC421",
+            "name": "Educational Research"
+        },
+        {
+            "code": "VPED400",
+            "name": "Materials Development in TEVT"
+        },
+        {
+            "code": "VPED441",
+            "name": "Internship – Teaching/Training"
+        },
+        {
+            "code": "ITEX499",
+            "name": "Professional IT Project II"
+        }
+    ],
+    "semester8": [
+        {
+            "code": "VPED401",
+            "name": "Enterprise Development"
+        },
+        {
+            "code": "VPED442",
+            "name": "Internship – Work-based Learning"
+        },
+        {
+            "code": "VPED499",
+            "name": "Educational Research Project"
+        }
+    ]
+}
