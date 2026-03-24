@@ -38,7 +38,15 @@ def teacher_view_students(request, subject_id):
         # Calculate overall attendance percentage for this specific subject
         student_total = Attendance.objects.filter(student=student, session__subject=subject).count()
         student_present = Attendance.objects.filter(student=student, session__subject=subject, status='present').count()
-        student.subject_attendance_pct = round((student_present / student_total) * 100, 1) if student_total > 0 else 0
+        student_absent = Attendance.objects.filter(student=student, session__subject=subject, status='absent').count()
+        student_late = Attendance.objects.filter(student=student, session__subject=subject, status='late').count()
+        student_absent_from_late = student_late // 4
+        student_effective_absent = student_absent + student_absent_from_late
+        student_effective_present = max(student_total - student_effective_absent, 0)
+
+        student.late_count = student_late
+        student.absent_from_late = student_absent_from_late
+        student.subject_attendance_pct = round((student_effective_present / student_total) * 100, 1) if student_total > 0 else 0
     
     # Calculate overall subject attendance stats for the chart
     total_present = Attendance.objects.filter(student__in=students, session__subject=subject, status='present').count()

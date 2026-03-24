@@ -96,10 +96,18 @@
                                 <td>{{ class.subject.subject_name }}</td>
                                 <td>{{ class.start_time }} - {{ class.end_time }}</td>
                                 <td>
+                                    {% if class.pending_count > 0 %}
+                                    <a href="{% url 'teacher_verify_attendance' class.id %}"
+                                        class="btn btn-sm btn-warning fw-bold text-dark">
+                                        <i class="bi bi-shield-check me-1"></i>Verify 
+                                        <span class="badge bg-dark ms-1">{{ class.pending_count }}</span>
+                                    </a>
+                                    {% else %}
                                     <a href="{% url 'mark_attendance' class.id %}"
                                         class="btn btn-sm btn-outline-primary">
                                         <i class="bi bi-pencil me-1"></i>Mark Attendance
                                     </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                             {% empty %}

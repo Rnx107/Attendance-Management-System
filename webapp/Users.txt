@@ -1,0 +1,28 @@
+students | B Tech Ed in IT 5th Semester
+Smarika Khatri        | smarika.khatri@kusoed.edu.np     | smarika.khatri
+Kabita Katwal         | kabita.katwal@kusoed.edu.np      | kabita.katwal
+Rojista Shrestha      | rojista.shrestha@kusoed.edu.np   | rojista.shrestha
+Karan Chaudhary       | karan.chaudhary@kusoed.edu.np    | karan.chaudhary
+Akshit Pokharel       | akshit.pokharel@kusoed.edu.np    | akshit.pokharel
+Prabina Budhathoki    | prabina.budhathoki@kusoed.edu.np | prabina.budhathoki
+Suraj Kumar Mahato    | suraj.mahato@kusoed.edu.np       | suraj.mahato
+Shristi Shrestha      | shristi.shrestha@kusoed.edu.np   | shristi.shrestha
+Rohan Thapa           | rohan.thapa@kusoed.edu.np        | rohan.thapa
+Santosh Bhatta        | santosh.bhatta@kusoed.edu.np     | santosh.bhatta
+Raman Neupane         | raman.neupane@kusoed.edu.np      | raman.neupane
+Rajkumar Pokharel     | rajkumar.pokharel@kusoed.edu.np  | rajkumar.pokharel
+Salan Maharjan        | salan.maharjan@kusoed.edu.np     | salan.maharjan
+Manjila Silwal        | manjila.silwal@kusoed.edu.np     | manjila.silwal
+Govinda Basak         | govinda.basak@kusoed.edu.np      | govinda.basak
+Sandip Ram            | sandip.ram@kusoed.edu.np         | sandip.ram
+Samir Tamang          | samir.tamang@kusoed.edu.np       | samir.tamang
+Jeebesh Khatri        | jeebesh.khatri@kusoed.edu.np     | jeebesh.khatri
+Bikash Sapkota        | bikash.sapkota@kusoed.edu.np     | bikash.sapkota
+Anand Jaiswal         | anand.jaiswal@kusoed.edu.np      | anand.jaiswal
+Dipshikha Ghimire     | dipshikha.ghimire@kusoed.edu.np  | dipshikha.ghimire
+Trishna Thapa         | trishna.thapa@kusoed.edu.np      | trishna.thapa
+Sajin Ghimire         | sajin.ghimire@kusoed.edu.np      | sajin.ghimire
+
+Teachers
+Pratit Raj Giri       | pratit.giri.teacher@kusoed.edu.np     | pratit.giri.teacher | Subject: Software Engineering
+Avinash Maskey        | avinash.maskey.teacher@kusoed.edu.np  | avinash.maskey.teacher | Subject: Management Information System

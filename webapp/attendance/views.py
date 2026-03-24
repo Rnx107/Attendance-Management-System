@@ -31,6 +31,11 @@ def student_mark_attendance(request, session_id):
     if session.session_date != timezone.now().date():
         messages.error(request, "Attendance can only be marked on the day of the class.")
         return redirect('student_dashboard')
+
+    # Attendance should not be marked after class end time.
+    if timezone.localtime().time() > session.end_time:
+        messages.error(request, "Attendance marking is closed because this session has ended.")
+        return redirect('student_dashboard')
         
     # Check if already marked
     if Attendance.objects.filter(session=session, student=student).exists():
@@ -119,35 +124,54 @@ def teacher_verify_attendance(request, session_id):
         course=session.subject.course
     ).select_related('user').order_by('user__lastname', 'user__firstname')
     
-    attendance_records = Attendance.objects.filter(session=session).select_related('student__user')
+    attendance_records = Attendance.objects.filter(session=session).select_related('student__user', 'marked_by')
     attendance_map = {str(a.student_id): a for a in attendance_records}
     
     if request.method == 'POST':
         for student in students:
+            # If the teacher didn't change it, we take what was in the form,
+            # or default to 'absent' for students who never marked themselves
             status = request.POST.get(f'status_{student.id}')
             
-            if status:
-                Attendance.objects.update_or_create(
-                    session=session,
-                    student=student,
-                    defaults={
-                        'status': status,
-                        'verification_status': 'verified',
-                        'verified_by': request.user,
-                        'verified_at': timezone.now()
-                    }
-                )
+            if not status:
+                status = 'absent'
+                
+            Attendance.objects.update_or_create(
+                session=session,
+                student=student,
+                defaults={
+                    'status': status,
+                    'verification_status': 'verified',
+                    'verified_by': request.user,
+                    'verified_at': timezone.now()
+                }
+            )
         messages.success(request, f"Attendance for {session.subject.subject_name} verified successfully.")
         return redirect('teacher_view_students', subject_id=session.subject.id)
     
     student_list = []
+    marked_students = []
+    unmarked_students = []
     for s in students:
         s.attendance = attendance_map.get(str(s.id))
         student_list.append(s)
+
+        is_self_marked = bool(
+            s.attendance
+            and s.attendance.marked_by
+            and s.attendance.marked_by.role == 'student'
+        )
+
+        if is_self_marked:
+            marked_students.append(s)
+        else:
+            unmarked_students.append(s)
         
     context = {
         'session': session,
         'students': student_list,
+        'marked_students': marked_students,
+        'unmarked_students': unmarked_students,
         'page_title': 'Verify Attendance'
     }
     return render(request, 'attendance/verify.html', context)
@@ -172,7 +196,7 @@ def create_session(request):
                 taught_by=request.user
             )
             messages.success(request, f"Session for {subject.subject_name} created successfully.")
-            return redirect('mark_attendance', session_id=session.id)
+            return redirect('teacher_dashboard')
         else:
             messages.error(request, "All fields are required.")
     

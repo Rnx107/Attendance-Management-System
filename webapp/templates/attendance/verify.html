@@ -35,7 +35,15 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for student in students %}
+                        {% if marked_students %}
+                        <tr class="table-success">
+                            <td colspan="3" class="px-4 py-2 fw-bold">
+                                <i class="bi bi-check-circle me-1"></i>Marked Students
+                            </td>
+                        </tr>
+                        {% endif %}
+
+                        {% for student in marked_students %}
                         <tr>
                             <td class="px-4 py-3">
                                 <div class="fw-bold">{{ student.user.firstname }} {{ student.user.lastname }}</div>
@@ -43,9 +51,9 @@
                             </td>
                             <td class="py-3">
                                 <select name="status_{{ student.id }}" class="form-select form-select-sm" style="width: auto;">
-                                    <option value="present" {% if student.attendance.status == 'present' or not student.attendance %}selected{% endif %}>Present</option>
-                                    <option value="absent" {% if student.attendance.status == 'absent' %}selected{% endif %}>Absent</option>
-                                    <option value="late" {% if student.attendance.status == 'late' %}selected{% endif %}>Late</option>
+                                    <option value="present" {% if student.attendance and student.attendance.status == 'present' %}selected{% endif %}>Present</option>
+                                    <option value="absent" {% if student.attendance and student.attendance.status == 'absent' %}selected{% endif %}>Absent</option>
+                                    <option value="late" {% if student.attendance and student.attendance.status == 'late' %}selected{% endif %}>Late</option>
                                 </select>
                             </td>
                             <td class="py-3">
@@ -54,16 +62,48 @@
                                         <i class="bi bi-clock me-1"></i>{{ student.attendance.marked_at|time:"H:i" }}
                                         by {% if student.attendance.marked_by.role == 'student' %}Self{% else %}Teacher{% endif %}
                                     </span>
+                                    {% if student.attendance.marked_by and student.attendance.marked_by.role == 'student' %}
+                                    <span class="badge bg-success ms-2">Self Marked</span>
+                                    {% endif %}
                                 {% else %}
                                     <span class="small text-muted italic">Not marked</span>
                                 {% endif %}
                             </td>
                         </tr>
-                        {% empty %}
+                        {% endfor %}
+
+                        {% if unmarked_students %}
+                        <tr class="table-warning">
+                            <td colspan="3" class="px-4 py-2 fw-bold">
+                                <i class="bi bi-hourglass-split me-1"></i>Unmarked Students
+                            </td>
+                        </tr>
+                        {% endif %}
+
+                        {% for student in unmarked_students %}
+                        <tr>
+                            <td class="px-4 py-3">
+                                <div class="fw-bold">{{ student.user.firstname }} {{ student.user.lastname }}</div>
+                                <div class="text-muted small">ID: {{ student.id|stringformat:".8s" }}...</div>
+                            </td>
+                            <td class="py-3">
+                                <select name="status_{{ student.id }}" class="form-select form-select-sm" style="width: auto;">
+                                    <option value="present">Present</option>
+                                    <option value="absent" selected>Absent</option>
+                                    <option value="late">Late</option>
+                                </select>
+                            </td>
+                            <td class="py-3">
+                                <span class="small text-muted italic">Not marked</span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+
+                        {% if not marked_students and not unmarked_students %}
                         <tr>
                             <td colspan="3" class="text-center text-muted py-5">No students enrolled in this course/semester.</td>
                         </tr>
-                        {% endfor %}
+                        {% endif %}
                     </tbody>
                 </table>
             </div>

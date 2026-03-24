@@ -48,6 +48,7 @@
                             <td>{{ forloop.counter }}</td>
                             <td>
                                 {{ student.user.firstname }} {{ student.user.lastname }}
+                                <div class="small text-muted">Late: {{ student.late_count }} ({{ student.absent_from_late }} -> absent)</div>
                                 {% if student.subject_attendance_pct < 70 %}
                                 <span class="badge bg-danger ms-2" title="Attendance below 70%">
                                     <i class="bi bi-exclamation-triangle-fill me-1"></i>Low: {{ student.subject_attendance_pct }}%
